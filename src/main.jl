@@ -116,7 +116,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
         end
     end
 
-    buttongrid = GridLayout(tellwidth = true)
+    buttongrid = GridLayout(tellwidth = true, tellheight = true)
     buttongrid[1,1] = update
     buttongrid[1,2] = ui
     buttongrid[1,3] = grid!(hcat(toggle, lable), tellheight = false)
@@ -141,9 +141,9 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     linkaxes!(axs...)
     hideydecorations!.(axs[2:end], grid = false)
 
-    layout[1, 1] = buttongrid
-    layout[2, 1] = img_ax
-    layout[3, 1] = rpmgrid
+    layout[1, 1] = img_ax
+    layout[2, 1] = rpmgrid
+    layout[3, 1] = buttongrid
 
 
     playing[] = true
