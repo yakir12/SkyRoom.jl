@@ -99,7 +99,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
         if tf
             name = joinpath(tempdir(), string(now(), " ", label_setup(ui.selection[])))
             filename[] = name
-            io = open("$name.csv", "w")
+            io = open(p"$name.csv", "w")
             println(io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
             fanio[] = io
             playing[] = false
