@@ -1,0 +1,13 @@
+name = "SkyRoom"
+uuid = "89136b26-4a1a-4e2e-b401-3810d1335c72"
+authors = ["Yakir Gagnon <12.yakir@gmail.com> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
