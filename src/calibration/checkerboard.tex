@@ -1,0 +1,22 @@
+\documentclass[]{article}
+\usepackage[margin=1cm,a3paper]{geometry}
+\usepackage{tikz}
+\begin{document}
+3 cm
+\vspace*{\fill}
+\begin{center}
+    \begin{tikzpicture}[x=3cm, y=3cm]
+        \foreach \y in {0,2,...,10}{
+            \foreach \x in {0,2,...,7}{
+                \fill (\x,\y) rectangle (1+\x,1+\y);
+            }
+        }
+        \foreach \y in {0,2,...,8}{
+            \foreach \x in {0,2,...,7}{
+                \fill (1+\x,1+\y) rectangle (2+\x,2+\y);
+            }
+        }
+    \end{tikzpicture}
+\end{center}
+\vspace*{\fill}
+\end{document}
