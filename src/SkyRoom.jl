@@ -2,7 +2,7 @@ module SkyRoom
 
 export main
 
-using FilePathsBase, AWSCore, AWSS3
+using FilePathsBase, AWSS3
 
 const s3path = S3Path("s3://dackelab")
 
