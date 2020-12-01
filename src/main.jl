@@ -31,7 +31,7 @@ function record(camera, name, frame, playing)
         finishencode!(camera.encoder, io)
     end
     mux(tmp, "$name.mp4", camera.cam.framerate)
-    mv("$name.mp4", joinpath(s3path, "$name.mp4"))
+    mv(p"$name.mp4", joinpath(s3path, "$name.mp4"))
 end
 
 function play(camera, frame, playing)
@@ -109,7 +109,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
             close(fanio[])
             fanio[] = devnull
             name = filename[]
-            mv("$name.csv", joinpath(s3path, "$name.csv"))
+            mv(p"$name.csv", joinpath(s3path, "$name.csv"))
 
             playing[] = true
             @async play(camera, frame, playing)
