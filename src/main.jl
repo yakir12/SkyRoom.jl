@@ -125,7 +125,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     image!(img_ax, lift(rotr90, frame))
     hidedecorations!(img_ax)
     tightlimits!(img_ax)
-    for interaction in interactions(img_ax).
+    for interaction in keys(interactions(img_ax))
         deregister_interaction!(img_ax, interaction)
     end
 
@@ -143,7 +143,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     end
     linkaxes!(axs...)
     hideydecorations!.(axs[2:end], grid = false)
-    for ax in axs, interaction in interactions(ax).
+    for ax in axs, interaction in keys(interactions(ax))
         deregister_interaction!(ax, interaction)
     end
 
