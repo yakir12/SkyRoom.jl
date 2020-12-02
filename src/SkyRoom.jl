@@ -5,6 +5,7 @@ export main
 using FilePathsBase, AWSS3
 
 const s3path = S3Path("s3://dackebeetle")
+s3path.config[:region] = "eu-north-1"
 
 const baudrate = 9600
 
