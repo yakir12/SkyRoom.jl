@@ -13,7 +13,7 @@ label_setup(x) = string("fans=", Int[i.pwm for i in x.fans], "; stars=", (i for 
 function update_arena!(wind_arduinos, led_arduino, setup)
     for a in wind_arduinos
         a.pwm[] = setup.fans[a.id].pwm
-        sleep(0.01) # see if that helps
+        sleep(0.001) # see if that helps
     end
     led_arduino.msg[] = parse2arduino(setup.stars)
 end
@@ -31,13 +31,13 @@ function record(camera, name, frame, playing)
         finishencode!(camera.encoder, io)
     end
     mux(tmp, "$name.mp4", camera.cam.framerate)
-    mv(p"$name.mp4", joinpath(s3path, "$name.mp4"))
+    mv(p"$name.mp4", joinpath(s3path, "$(basename(name)).mp4"))
 end
 
 function play(camera, frame, playing)
     while playing[]
         frame[] = get_frame(camera)
-        sleep(0.001)
+        sleep(0.0001)
     end
 end
 
@@ -109,7 +109,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
             close(fanio[])
             fanio[] = devnull
             name = filename[]
-            mv(p"$name.csv", joinpath(s3path, "$name.csv"))
+            mv(p"$name.csv", joinpath(s3path, "$(basename(name)).csv"))
 
             playing[] = true
             @async play(camera, frame, playing)
