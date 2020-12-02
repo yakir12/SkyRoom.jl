@@ -121,15 +121,18 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     buttongrid[1,2] = ui
     buttongrid[1,3] = grid!(hcat(toggle, lable), tellheight = false)
 
-    img_ax = LAxis(scene, aspect = DataAspect(), xzoomlock = true, yzoomlock = true)
+    img_ax = LAxis(scene, aspect = DataAspect())
     image!(img_ax, lift(rotr90, frame))
     hidedecorations!(img_ax)
     tightlimits!(img_ax)
+    for interaction in interactions(img_ax).
+        deregister_interaction!(img_ax, interaction)
+    end
 
     colors = range(Gray(0.0), Gray(0.75), length = 3)
 
     rpmgrid = GridLayout()
-    axs = rpmgrid[:h] = [LAxis(scene, ylabel = "RPM", title = "Fan #$(a.id)", xticklabelsvisible = false, xzoomlock = true, yzoomlock = true) for a in wind_arduinos]
+    axs = rpmgrid[:h] = [LAxis(scene, ylabel = "RPM", title = "Fan #$(a.id)", xticklabelsvisible = false) for a in wind_arduinos]
     for (i, o) in enumerate(rpmlines), (line, color) in zip(o, colors)
         lines!(axs[i], line; color)
     end
@@ -140,6 +143,9 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     end
     linkaxes!(axs...)
     hideydecorations!.(axs[2:end], grid = false)
+    for ax in axs, interaction in interactions(ax).
+        deregister_interaction!(ax, interaction)
+    end
 
     layout[1, 1] = buttongrid
     layout[2, 1] = img_ax
