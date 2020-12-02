@@ -141,9 +141,9 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     linkaxes!(axs...)
     hideydecorations!.(axs[2:end], grid = false)
 
-    layout[1, 1] = img_ax
-    layout[2, 1] = rpmgrid
-    layout[3, 1] = buttongrid
+    layout[1, 1] = buttongrid
+    layout[2, 1] = img_ax
+    layout[3, 1] = rpmgrid
 
 
     playing[] = true

@@ -4,9 +4,11 @@ export main
 
 using FilePathsBase, AWSS3
 
-const s3path = S3Path("s3://dackelab")
+const s3path = S3Path("s3://dackebeetle")
 
 const baudrate = 9600
+
+ENV["AWS_DEFAULT_REGION"] = "eu-north-1"
 
 # Fans
 const t4 = 15000000
