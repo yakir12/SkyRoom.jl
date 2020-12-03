@@ -63,7 +63,8 @@ function record(setup, camera, wind_arduinos, frame, trpms, playing)
     tb = Tar.create(string(folder))
     @info "tarball built"
     source = AbstractPath(tb)
-    destination = s3path / recording_time * ".tar"
+    destination = S3Path(joinpath(bucket, recording_time * ".tar"))
+    destination.config[:region] = region
     @info "trying to move" source destination
     mv(source, destination)
     @info "tarball uploaded"
