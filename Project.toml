@@ -17,6 +17,7 @@ GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 LibSerialPort = "a05a14c7-6e3b-5ba9-90a2-45558833e1df"
 Observables = "510215fc-4207-5dde-b226-833fc4488ee2"
+Tar = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 VideoIO = "d6d074c3-1acf-5d4c-9a43-ef38773959a2"
 
 [compat]
