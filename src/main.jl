@@ -107,7 +107,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
             playing[] = false
 
             open(folder / "setup.txt", "w") do io
-                print(ui[])
+                print(ui.selection[])
             end
 
             recording_task[] = @async record(camera, folder, frame, playing)
