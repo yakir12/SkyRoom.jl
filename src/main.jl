@@ -18,7 +18,7 @@ function update_arena!(wind_arduinos, led_arduino, setup)
     led_arduino.msg[] = parse2arduino(setup.stars)
 end
 
-function record(setup, camera, wind_arduinos, frame, trpms, playing)
+function record(setup, camera, wind_arduinos, frame, trpms, playing, scene)
 
     recording_time = string(now())
 
@@ -48,24 +48,18 @@ function record(setup, camera, wind_arduinos, frame, trpms, playing)
             frame[] = img
             trpms[] = t => rpms
         end
-        @info "stopped recording"
+        scene.events.window_open[] = false
         finishencode!(camera.encoder, stream_io)
-        @info "finished encoding"
     end
     close(fan_io)
 
     video = folder / "track.mp4"
-    @info "start muxing"
     mux(tmp, video, camera.cam.framerate)
-    @info "finished muxing"
 
-    @info "start building tarball"
     tb = Tar.create(string(folder))
-    @info "tarball built"
     source = AbstractPath(tb)
     destination = S3Path(joinpath(bucket, recording_time * ".tar"))
     destination.config[:region] = region
-    @info "trying to move" source destination
     mv(source, destination)
     @info "tarball uploaded"
 
@@ -130,7 +124,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     on(toggle.active) do tf
         if tf
             playing[] = false
-            @async record(ui.selection[], camera, wind_arduinos, frame, trpms, playing)
+            @async record(ui.selection[], camera, wind_arduinos, frame, trpms, playing, scene)
         else 
             playing[] = true
             @async play(camera, wind_arduinos, frame, trpms, playing)
