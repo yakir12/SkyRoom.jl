@@ -62,7 +62,10 @@ function record(setup, camera, wind_arduinos, frame, trpms, playing)
     @info "start building tarball"
     tb = Tar.create(string(folder))
     @info "tarball built"
-    mv(AbstractPath(tb), s3path / recording_time * ".tar")
+    source = AbstractPath(tb)
+    destination = s3path / recording_time * ".tar"
+    @info "trying to move" source destination
+    mv(source, destination)
     @info "tarball uploaded"
 
 end
