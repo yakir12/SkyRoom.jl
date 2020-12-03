@@ -56,7 +56,9 @@ function record(setup, camera, wind_arduinos, frame, trpms, playing)
     mux(tmp, video, camera.cam.framerate)
 
     tb = Tar.create(folder)
+    @info "tarball built"
     mv(AbstractPath(tb), s3path / recording_time * ".tar")
+    @info "tarball uploaded"
 
 end
 
