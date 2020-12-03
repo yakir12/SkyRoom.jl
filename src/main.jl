@@ -18,24 +18,51 @@ function update_arena!(wind_arduinos, led_arduino, setup)
     led_arduino.msg[] = parse2arduino(setup.stars)
 end
 
-function record(camera, folder, frame, playing)
+function record(setup, camera, wind_arduinos, frame, trpms, playing)
+
+    recording_time = string(now())
+
+    folder = tmpdir() / recording_time
+    mkdir(folder)
+
+    open(folder / "setup.txt", "w") do io
+        print(io, setup)
+    end
+
+    fan_io = open(folder / "fans.csv", "w")
+    println(fan_io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
+
     tmp = tempname()
-    open(tmp, "w") do io
+    
+    open(tmp, "w") do stream_io
         i = 0
         while !playing[]
             i += 1
+
             img = get_frame(camera)
-            appendencode!(camera.encoder, io, img, i)
+            appendencode!(camera.encoder, stream_io, img, i)
+
+            t, rpms = get_rpms(wind_arduinos)
+            println(fan_io, t, ",",join(Iterators.flatten(rpms), ","))
+
             frame[] = img
+            trpms[] = t => rpms
         end
-        finishencode!(camera.encoder, io)
+        finishencode!(camera.encoder, stream_io)
     end
+    close(fan_io)
+
     video = folder / "track.mp4"
     mux(tmp, video, camera.cam.framerate)
+
+    tb = Tar.create(folder)
+    mv(AbstractPath(tb), s3path / recording_time * ".tar")
+
 end
 
-function play(camera, frame, playing)
+function play(camera, wind_arduinos, frame, trpms, playing)
     while playing[]
+        trpms[] = get_rpms(wind_arduinos)
         frame[] = get_frame(camera)
         sleep(0.0001)
     end
@@ -71,12 +98,6 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
 
     scene, layout = layoutscene()
 
-    recording_time = Observable("")
-    fanio = Observable{IO}(devnull)
-    on(trpms) do (t, rpms)
-        println(fanio[], t, ",",join(Iterators.flatten(rpms), ","))
-    end
-
     df = Observable(fetch_setups())
     setups = map(parse_setups, df)
     options = map(setups) do x
@@ -94,32 +115,14 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     toggle = LToggle(scene, active = false)
     lable = LText(scene, lift(x -> x ? "recording" : "playing", toggle.active))
 
-    recording_task = Observable(@async 1+1)
     playing = Observable(true)
     on(toggle.active) do tf
         if tf
-            recording_time[] = string(now())
-            folder = tmpdir() / recording_time[]
-            mkdir(folder)
-            io = open(folder / "fans.csv", "w")
-            println(io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
-            fanio[] = io
             playing[] = false
-
-            open(folder / "setup.txt", "w") do io
-                print(ui.selection[])
-            end
-
-            recording_task[] = @async record(camera, folder, frame, playing)
+            @async record(ui.selection[], camera, wind_arduinos, frame, trpms, playing)
         else 
-            close(fanio[])
-            fanio[] = devnull
             playing[] = true
-            @async play(camera, frame, playing)
-            wait(recording_task[])
-            tb = Tar.create(tmpdir() / recording_time[])
-
-            mv(AbstractPath(tb), s3path / recording_time[] * ".tar")
+            @async play(camera, wind_arduinos, frame, trpms, playing)
         end
     end
 
@@ -159,8 +162,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     layout[3, 1] = rpmgrid
 
 
-    playing[] = true
-    @async play(camera, frame, playing)
+    @async play(camera, wind_arduinos, frame, trpms, playing)
 
     on(scene.events.window_open) do tf
         if !tf
