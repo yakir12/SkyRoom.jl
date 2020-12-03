@@ -33,7 +33,7 @@ function record(setup, camera, wind_arduinos, frame, trpms, playing)
     println(fan_io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
 
     tmp = tempname()
-    
+
     open(tmp, "w") do stream_io
         i = 0
         while !playing[]
@@ -48,13 +48,18 @@ function record(setup, camera, wind_arduinos, frame, trpms, playing)
             frame[] = img
             trpms[] = t => rpms
         end
+        @info "stopped recording"
         finishencode!(camera.encoder, stream_io)
+        @info "finished encoding"
     end
     close(fan_io)
 
     video = folder / "track.mp4"
+    @info "start muxing"
     mux(tmp, video, camera.cam.framerate)
+    @info "finished muxing"
 
+    @info "start building tarball"
     tb = Tar.create(folder)
     @info "tarball built"
     mv(AbstractPath(tb), s3path / recording_time * ".tar")
