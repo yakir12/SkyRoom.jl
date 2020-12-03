@@ -18,7 +18,7 @@ function update_arena!(wind_arduinos, led_arduino, setup)
     led_arduino.msg[] = parse2arduino(setup.stars)
 end
 
-function record(camera, name, frame, playing)
+function record(camera, folder, frame, playing)
     tmp = tempname()
     open(tmp, "w") do io
         i = 0
@@ -30,8 +30,8 @@ function record(camera, name, frame, playing)
         end
         finishencode!(camera.encoder, io)
     end
-    mux(tmp, "$name.mp4", camera.cam.framerate)
-    mv(p"$name.mp4", joinpath(s3path, "$(basename(name)).mp4"))
+    video = folder / "track.mp4"
+    mux(tmp, video, camera.cam.framerate)
 end
 
 function play(camera, frame, playing)
@@ -71,7 +71,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
 
     scene, layout = layoutscene()
 
-    filename = Observable("")
+    recording_time = Observable("")
     fanio = Observable{IO}(devnull)
     on(trpms) do (t, rpms)
         println(fanio[], t, ",",join(Iterators.flatten(rpms), ","))
@@ -94,25 +94,32 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     toggle = LToggle(scene, active = false)
     lable = LText(scene, lift(x -> x ? "recording" : "playing", toggle.active))
 
+    recording_task = Observable(@async 1+1)
     playing = Observable(true)
     on(toggle.active) do tf
         if tf
-            name = joinpath(tempdir(), string(now(), " ", label_setup(ui.selection[])))
-            filename[] = name
-            io = open(p"$name.csv", "w")
+            recording_time[] = string(now())
+            folder = tmpdir() / recording_time[]
+            mkdir(folder)
+            io = open(folder / "fans.csv", "w")
             println(io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
             fanio[] = io
             playing[] = false
 
-            @async record(camera, name, frame, playing)
+            open(folder / "setup.txt", "w") do io
+                print(ui[])
+            end
+
+            recording_task[] = @async record(camera, folder, frame, playing)
         else 
             close(fanio[])
             fanio[] = devnull
-            name = filename[]
-            mv(p"$name.csv", joinpath(s3path, "$(basename(name)).csv"))
-
             playing[] = true
             @async play(camera, frame, playing)
+            wait(recording_task[])
+            tb = Tar.create(tmpdir() / recording_time[])
+
+            mv(AbstractPath(tb), s3path / recording_time[] * ".tar")
         end
     end
 

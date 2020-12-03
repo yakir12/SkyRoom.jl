@@ -2,7 +2,9 @@ module SkyRoom
 
 export main
 
-using FilePathsBase, AWSS3
+using FilePathsBase
+using FilePathsBase: /
+using AWSS3
 
 const s3path = S3Path("s3://dackebeetle")
 s3path.config[:region] = "eu-north-1"
