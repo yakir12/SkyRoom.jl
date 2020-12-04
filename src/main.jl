@@ -18,7 +18,9 @@ function update_arena!(wind_arduinos, led_arduino, setup)
     led_arduino.msg[] = parse2arduino(setup.stars)
 end
 
-function record(setup, camera, wind_arduinos, frame, trpms, playing, scene)
+function record(setup, camera, wind_arduinos, frame, trpms)
+
+    open(camera)
 
     recording_time = string(now())
 
@@ -36,7 +38,7 @@ function record(setup, camera, wind_arduinos, frame, trpms, playing, scene)
 
     open(tmp, "w") do stream_io
         i = 0
-        while !playing[]
+        while isopen(camera)
             i += 1
 
             img = get_frame(camera)
@@ -48,13 +50,12 @@ function record(setup, camera, wind_arduinos, frame, trpms, playing, scene)
             frame[] = img
             trpms[] = t => rpms
         end
-        scene.events.window_open[] = false
         finishencode!(camera.encoder, stream_io)
     end
     close(fan_io)
 
     video = folder / "track.mp4"
-    mux(tmp, video, camera.cam.framerate)
+    mux(tmp, video, camera.cam.framerate, silent = true)
 
     tb = Tar.create(string(folder))
     source = AbstractPath(tb)
@@ -65,8 +66,9 @@ function record(setup, camera, wind_arduinos, frame, trpms, playing, scene)
 
 end
 
-function play(camera, wind_arduinos, frame, trpms, playing)
-    while playing[]
+function play(camera, wind_arduinos, frame, trpms)
+    open(camera)
+    while isopen(camera)
         trpms[] = get_rpms(wind_arduinos)
         frame[] = get_frame(camera)
         sleep(0.0001)
@@ -120,14 +122,13 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     toggle = LToggle(scene, active = false)
     lable = LText(scene, lift(x -> x ? "recording" : "playing", toggle.active))
 
-    playing = Observable(true)
     on(toggle.active) do tf
         if tf
-            playing[] = false
-            @async record(ui.selection[], camera, wind_arduinos, frame, trpms, playing, scene)
+            close(camera)
+            @async record(ui.selection[], camera, wind_arduinos, frame, trpms)
         else 
-            playing[] = true
-            @async play(camera, wind_arduinos, frame, trpms, playing)
+            close(camera)
+            @async play(camera, wind_arduinos, frame, trpms)
         end
     end
 
@@ -167,7 +168,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     layout[3, 1] = rpmgrid
 
 
-    @async play(camera, wind_arduinos, frame, trpms, playing)
+    @async play(camera, wind_arduinos, frame, trpms)
 
     on(scene.events.window_open) do tf
         if !tf
