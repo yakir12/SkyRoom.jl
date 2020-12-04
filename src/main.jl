@@ -22,7 +22,7 @@ function record(recording_time, setup, camera, wind_arduinos, frame, trpms)
 
     open(camera)
 
-    folder = tmpdir() / recording_time
+    folder = datadir / recording_time
     mkdir(folder)
 
     open(folder / "setup.txt", "w") do io
@@ -32,7 +32,7 @@ function record(recording_time, setup, camera, wind_arduinos, frame, trpms)
     fan_io = open(folder / "fans.csv", "w")
     println(fan_io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
 
-    tmp = tempname()
+    tmp = datadir / "temp.stream"
 
     open(tmp, "w") do stream_io
         i = 0
@@ -52,17 +52,9 @@ function record(recording_time, setup, camera, wind_arduinos, frame, trpms)
     end
     close(fan_io)
 
-    video = folder / "track.mp4"
-    mux(tmp, video, camera.cam.framerate, silent = true)
-
     props = [:priv_data => ("crf" => "0", "preset" => "ultrafast")]
     camera.encoder = prepareencoder(camera.buff, framerate = 10, AVCodecContextProperties = props, codec_name = "libx264rgb")
 
-    tb = Tar.create(string(folder))
-    source = AbstractPath(tb)
-    destination = S3Path(bucket, recording_time * ".tar", config = s3config)
-    mv(source, destination)
-    @info "tarball uploaded"
 
 end
 
@@ -72,6 +64,22 @@ function play(camera, wind_arduinos, frame, trpms)
         trpms[] = get_rpms(wind_arduinos)
         frame[] = get_frame(camera)
         sleep(0.0001)
+    end
+end
+
+function backup()
+    for folder in readdir(datadir, join = true)
+        name = basename(folder)
+        video = folder / "track.mp4"
+        tmp = folder / "temp.stream"
+        mux(tmp, video, camera.cam.framerate, silent = true)
+
+        tb = Tar.create(string(folder))
+        source = AbstractPath(tb)
+        destination = S3Path(bucket, name * ".tar", config = s3config)
+        mv(source, destination)
+        @assert AWSS3.s3_exists(s3config, "dackebeetle", name * ".tar") "upload failed for $name"
+        rm(folder, recursive = true)
     end
 end
 
@@ -131,12 +139,14 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
             @async record(name[], ui.selection[], camera, wind_arduinos, frame, trpms)
         else 
             close(camera)
-            while !AWSS3.s3_exists(s3config, "dackebeetle", name[] * ".tar")
-                @info "waiting for upload to finish"
-                sleep(5)
-            end
+            sleep(1)
             @async play(camera, wind_arduinos, frame, trpms)
         end
+    end
+
+    upload = LButton(scene, label = "Backup")
+    on(upload.clicks) do _
+        backup()
     end
 
     buttongrid = GridLayout(tellwidth = true, tellheight = true)

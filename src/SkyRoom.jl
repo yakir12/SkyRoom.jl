@@ -13,6 +13,9 @@ s3config = tmp.config
 
 const baudrate = 9600
 
+const datadir = joinpath(homedir(), "data")
+mkpath(datadir)
+
 # Fans
 const t4 = 15000000
 const top_rpm = 12650
