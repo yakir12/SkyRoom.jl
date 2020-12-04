@@ -18,7 +18,7 @@ Base.isopen(c::PiCam) = isopen(c.cam)
 Base.close(c::PiCam) = isopen(c) && close(c.cam)
 function Base.open(c::PiCam) 
     if !isopen(c) 
-        c.cam = VideoIO.openvideo(cam.url)
+        c.cam = VideoIO.openvideo(c.url)
     end
 end
 restart(c::PiCam) = (close(c); open(c))
