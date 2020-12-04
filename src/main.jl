@@ -18,11 +18,12 @@ function update_arena!(wind_arduinos, led_arduino, setup)
     led_arduino.msg[] = parse2arduino(setup.stars)
 end
 
-function record(recording_time, setup, camera, wind_arduinos, frame, trpms)
+function record(setup, camera, wind_arduinos, frame, trpms)
 
     open(camera)
 
-    folder = datadir / recording_time
+    folder = datadir / string(now())
+
     mkdir(folder)
 
     open(folder / "setup.txt", "w") do io
@@ -32,7 +33,7 @@ function record(recording_time, setup, camera, wind_arduinos, frame, trpms)
     fan_io = open(folder / "fans.csv", "w")
     println(fan_io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
 
-    tmp = datadir / "temp.stream"
+    tmp = folder / "temp.stream"
 
     open(tmp, "w") do stream_io
         i = 0
@@ -54,7 +55,6 @@ function record(recording_time, setup, camera, wind_arduinos, frame, trpms)
 
     props = [:priv_data => ("crf" => "0", "preset" => "ultrafast")]
     camera.encoder = prepareencoder(camera.buff, framerate = 10, AVCodecContextProperties = props, codec_name = "libx264rgb")
-
 
 end
 
@@ -130,13 +130,11 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     toggle = LToggle(scene, active = false)
     lable = LText(scene, lift(x -> x ? "recording" : "playing", toggle.active))
 
-    name = Observable("")
 
     on(toggle.active) do tf
         if tf
             close(camera)
-            name[] = string(now())
-            @async record(name[], ui.selection[], camera, wind_arduinos, frame, trpms)
+            @async record(ui.selection[], camera, wind_arduinos, frame, trpms)
         else 
             close(camera)
             sleep(1)
