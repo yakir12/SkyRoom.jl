@@ -55,6 +55,9 @@ function record(recording_time, setup, camera, wind_arduinos, frame, trpms)
     video = folder / "track.mp4"
     mux(tmp, video, camera.cam.framerate, silent = true)
 
+    props = [:priv_data => ("crf" => "0", "preset" => "ultrafast")]
+    camera.encoder = prepareencoder(camera.buff, framerate = 10, AVCodecContextProperties = props, codec_name = "libx264rgb")
+
     tb = Tar.create(string(folder))
     source = AbstractPath(tb)
     destination = S3Path(bucket, recording_time * ".tar", config = s3config)
@@ -132,7 +135,6 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
                 @info "waiting for upload to finish"
                 sleep(5)
             end
-            @info "upload done"
             @async play(camera, wind_arduinos, frame, trpms)
         end
     end
