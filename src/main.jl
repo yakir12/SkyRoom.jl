@@ -130,6 +130,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
             close(camera)
             while !AWSS3.s3_exists(s3config, "dackebeetle", name[] * ".tar")
                 @info "waiting for upload to finish"
+                sleep(5)
             end
             @info "upload done"
             @async play(camera, wind_arduinos, frame, trpms)
