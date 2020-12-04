@@ -7,7 +7,9 @@ using FilePathsBase: /
 using AWSS3
 
 const bucket = "s3://dackebeetle"
-const region = "eu-north-1"
+tmp = S3Path(bucket)
+tmp.config[:region] = "eu-north-1"
+s3config = tmp.config
 
 const baudrate = 9600
 

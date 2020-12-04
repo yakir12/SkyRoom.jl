@@ -18,11 +18,9 @@ function update_arena!(wind_arduinos, led_arduino, setup)
     led_arduino.msg[] = parse2arduino(setup.stars)
 end
 
-function record(setup, camera, wind_arduinos, frame, trpms)
+function record(recording_time, setup, camera, wind_arduinos, frame, trpms)
 
     open(camera)
-
-    recording_time = string(now())
 
     folder = tmpdir() / recording_time
     mkdir(folder)
@@ -59,8 +57,7 @@ function record(setup, camera, wind_arduinos, frame, trpms)
 
     tb = Tar.create(string(folder))
     source = AbstractPath(tb)
-    destination = S3Path(joinpath(bucket, recording_time * ".tar"))
-    destination.config[:region] = region
+    destination = S3Path(bucket, recording_time * ".tar", config = s3config)
     mv(source, destination)
     @info "tarball uploaded"
 
@@ -122,12 +119,19 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     toggle = LToggle(scene, active = false)
     lable = LText(scene, lift(x -> x ? "recording" : "playing", toggle.active))
 
+    name = Observable("")
+
     on(toggle.active) do tf
         if tf
             close(camera)
-            @async record(ui.selection[], camera, wind_arduinos, frame, trpms)
+            name[] = string(now())
+            @async record(name[], ui.selection[], camera, wind_arduinos, frame, trpms)
         else 
             close(camera)
+            while !AWSS3.s3_exists(s3config, "dackebeetle", name[] * ".tar")
+                @info "waiting for upload to finish"
+            end
+            @info "upload done"
             @async play(camera, wind_arduinos, frame, trpms)
         end
     end
