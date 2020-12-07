@@ -54,7 +54,8 @@ using VideoIO
 include("camera.jl")
 
 using GLMakie
-using GLMakie.AbstractPlotting.MakieLayout
+using AbstractPlotting
+using AbstractPlotting.MakieLayout
 using DataStructures
 using CSV, DataFrames
 using HTTP
