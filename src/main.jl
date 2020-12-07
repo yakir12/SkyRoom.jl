@@ -66,20 +66,25 @@ function play(camera, wind_arduinos, frame, trpms)
     end
 end
 
-function backup()
-    for folder in readpath(datadir)
-        name = basename(folder)
-        video = folder / "track.mp4"
+function backup(progress)
+    todo = readpath(datadir)
+    n = length(todo)
+    done = Vector{SystemPath}(undef, n)
+    for (i, folder) in enumerate(todo)
         tmp = folder / "temp.stream"
+        video = folder / "track.mp4"
         mux(tmp, video, framerate, silent = true)
 
         tb = Tar.create(string(folder))
         source = AbstractPath(tb)
+        name = basename(folder)
         destination = S3Path(bucket, name * ".tar", config = s3config)
         mv(source, destination)
         @assert AWSS3.s3_exists(s3config, "dackebeetle", name * ".tar") "upload failed for $name"
-        rm(folder, recursive = true)
+        push!(done, folder)
+        progress[] = i/n
     end
+    map(x -> rm(x, recursive = true), done)
 end
 
 
@@ -141,9 +146,11 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
         end
     end
 
+    progress = Node(0.0)
+
     upload = LButton(scene, label = "Backup")
     on(upload.clicks) do _
-        backup()
+        backup(progress)
     end
 
     buttongrid = GridLayout(tellwidth = true, tellheight = true)
@@ -151,6 +158,8 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     buttongrid[1,2] = ui
     buttongrid[1,3] = grid!(hcat(toggle, lable), tellheight = false)
     buttongrid[1,4] = upload
+
+    pb = LRect(scene, height = 20, width = @lift(Relative($progress)), halign = :left)
 
     img_ax = LAxis(scene, aspect = DataAspect())
     image!(img_ax, lift(rotr90, frame))
@@ -179,8 +188,9 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     end
 
     layout[1, 1] = buttongrid
-    layout[2, 1] = img_ax
-    layout[3, 1] = rpmgrid
+    layout[2, 1] = pb
+    layout[3, 1] = img_ax
+    layout[4, 1] = rpmgrid
 
 
     @async play(camera, wind_arduinos, frame, trpms)

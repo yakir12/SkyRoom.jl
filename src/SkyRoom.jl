@@ -14,7 +14,7 @@ s3config = tmp.config
 const baudrate = 9600
 
 const datadir = home() / "data"
-mkpath(datadir)
+isdir(datadir) || mkpath(datadir)
 
 # Fans
 const t4 = 15000000
