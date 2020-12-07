@@ -67,6 +67,7 @@ function play(camera, wind_arduinos, frame, trpms)
 end
 
 function backup(progress)
+    progress[] = 0.0
     todo = readpath(datadir)
     n = length(todo)
     done = Vector{SystemPath}(undef, n)
