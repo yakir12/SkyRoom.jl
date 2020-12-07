@@ -6,7 +6,7 @@ mutable struct PiCam
     function PiCam(url::String)
         cam = VideoIO.openvideo(url)
         buff = read(cam)
-        encoder = prepareencoder(buff; framerate, AVCodecContextProperties)#, codec_name)
+        encoder = prepareencoder(buff; framerate, AVCodecContextProperties, codec_name)
         new(url, cam, buff, encoder)
     end
 end
