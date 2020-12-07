@@ -27,7 +27,7 @@ function record(setup, camera, wind_arduinos, frame, trpms)
     mkdir(folder)
 
     open(folder / "setup.txt", "w") do io
-        print(io, setup)
+        print(io, label_setup(setup))
     end
 
     fan_io = open(folder / "fans.csv", "w")

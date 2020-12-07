@@ -13,7 +13,7 @@ s3config = tmp.config
 
 const baudrate = 9600
 
-const datadir = joinpath(homedir(), "data")
+const datadir = home() / "data"
 mkpath(datadir)
 
 # Fans
