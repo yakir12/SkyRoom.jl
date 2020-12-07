@@ -68,7 +68,7 @@ function play(camera, wind_arduinos, frame, trpms)
 end
 
 function backup()
-    for folder in readdir(datadir, join = true)
+    for folder in readpath(datadir)
         name = basename(folder)
         video = folder / "track.mp4"
         tmp = folder / "temp.stream"
