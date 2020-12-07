@@ -21,9 +21,20 @@ Tar = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 VideoIO = "d6d074c3-1acf-5d4c-9a43-ef38773959a2"
 
 [compat]
-GLMakie = "0.1"
+AWSS3 = "0.7"
 AbstractPlotting = "0.14"
+CSV  = "0.8"
+Colors = "0.12"
+DataFrames = "0.22"
+DataStructures =  "0.18"
+FilePathsBase = "0.9"
+FixedPointNumbers = "0.8"
+GLMakie = "0.1"
+HTTP = "0.9"
+LibSerialPort = "0.5"
+Observables = "0.3"
 Tar = "1.9"
+VideoIO = "0.8"
 julia = "1"
 
 [extras]
