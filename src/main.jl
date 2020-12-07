@@ -159,7 +159,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     buttongrid[1,3] = grid!(hcat(toggle, lable), tellheight = false)
     buttongrid[1,4] = upload
 
-    pb = LRect(scene, height = 20, width = @lift(Relative($progress)), halign = :left)
+    pb = LRect(scene, height = 20, width = lift(x -> Relative(x), progress), halign = :left)
 
     img_ax = LAxis(scene, aspect = DataAspect())
     image!(img_ax, lift(rotr90, frame))

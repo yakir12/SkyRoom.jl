@@ -55,7 +55,6 @@ include("camera.jl")
 
 using GLMakie
 using GLMakie.AbstractPlotting.MakieLayout
-using GLMakie.AbstractPlotting: @lift
 using DataStructures
 using CSV, DataFrames
 using HTTP
