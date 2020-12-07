@@ -84,6 +84,7 @@ function backup(progress)
         @assert AWSS3.s3_exists(s3config, "dackebeetle", name * ".tar") "upload failed for $name"
         done[i] = folder
         progress[] = i/n
+        sleep(0.01)
     end
     foreach(done) do folder
         rm(folder, recursive = true)
