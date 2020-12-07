@@ -7,9 +7,14 @@ using FilePathsBase: /
 using AWSS3
 
 const bucket = "s3://dackebeetle"
-const region = "eu-north-1"
+tmp = S3Path(bucket)
+tmp.config[:region] = "eu-north-1"
+s3config = tmp.config
 
 const baudrate = 9600
+
+const datadir = home() / "data"
+isdir(datadir) || mkpath(datadir)
 
 # Fans
 const t4 = 15000000
@@ -23,6 +28,11 @@ const brightness = 1
 const deadleds = 9
 const cardinals = ["NE", "SW", "SE", "NW"]
 const liveleds = ledsperstrip - deadleds
+
+# camera
+const framerate = 10
+const AVCodecContextProperties = [:priv_data => ("crf" => "0", "preset" => "ultrafast")]
+const codec_name = "libx264rgb"
 
 # experiments
 const setupsurl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNLWhLfp_iuW68j7SM6Px8ysTmbrfmrP_7ipXK9BkfzBgfqn3Mj7ra177mZyHlY5NLA3SDtfYNTROv/pub?gid=0&single=true&output=csv"
@@ -44,7 +54,8 @@ using VideoIO
 include("camera.jl")
 
 using GLMakie
-using GLMakie.AbstractPlotting.MakieLayout
+using AbstractPlotting
+using AbstractPlotting.MakieLayout
 using DataStructures
 using CSV, DataFrames
 using HTTP
