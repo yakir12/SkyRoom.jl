@@ -81,10 +81,12 @@ function backup(progress)
         destination = S3Path(bucket, name * ".tar", config = s3config)
         mv(source, destination)
         @assert AWSS3.s3_exists(s3config, "dackebeetle", name * ".tar") "upload failed for $name"
-        push!(done, folder)
+        done[i] = folder
         progress[] = i/n
     end
-    map(x -> rm(x, recursive = true), done)
+    foreach(done) do folder
+        rm(folder, recursive = true)
+    end
 end
 
 
@@ -150,7 +152,9 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
 
     upload = LButton(scene, label = "Backup")
     on(upload.clicks) do _
+        close(camera)
         backup(progress)
+        @async play(camera, wind_arduinos, frame, trpms)
     end
 
     buttongrid = GridLayout(tellwidth = true, tellheight = true)
