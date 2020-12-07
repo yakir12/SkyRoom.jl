@@ -13,32 +13,78 @@ label_setup(x) = string("fans=", Int[i.pwm for i in x.fans], "; stars=", (i for 
 function update_arena!(wind_arduinos, led_arduino, setup)
     for a in wind_arduinos
         a.pwm[] = setup.fans[a.id].pwm
-        sleep(0.01) # see if that helps
+        sleep(0.001) # see if that helps
     end
     led_arduino.msg[] = parse2arduino(setup.stars)
 end
 
-function record(camera, name, frame, playing)
-    tmp = tempname()
-    open(tmp, "w") do io
-        i = 0
-        while !playing[]
-            i += 1
-            img = get_frame(camera)
-            appendencode!(camera.encoder, io, img, i)
-            frame[] = img
-        end
-        finishencode!(camera.encoder, io)
+function record(setup, camera, wind_arduinos, frame, trpms)
+
+    open(camera)
+
+    folder = datadir / string(now())
+
+    mkdir(folder)
+
+    open(folder / "setup.txt", "w") do io
+        print(io, label_setup(setup))
     end
-    mux(tmp, "$name.mp4", camera.cam.framerate)
-    mv(p"$name.mp4", joinpath(s3path, "$name.mp4"))
+
+    fan_io = open(folder / "fans.csv", "w")
+    println(fan_io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
+
+    tmp = folder / "temp.stream"
+
+    open(tmp, "w") do stream_io
+        i = 0
+        while isopen(camera)
+            i += 1
+
+            img = get_frame(camera)
+            appendencode!(camera.encoder, stream_io, img, i)
+
+            t, rpms = get_rpms(wind_arduinos)
+            println(fan_io, t, ",",join(Iterators.flatten(rpms), ","))
+
+            frame[] = img
+            trpms[] = t => rpms
+        end
+        finishencode!(camera.encoder, stream_io)
+    end
+    close(fan_io)
+
+    camera.encoder = prepareencoder(camera.buff; framerate, AVCodecContextProperties, codec_name)
+
 end
 
-function play(camera, frame, playing)
-    while playing[]
+function play(camera, wind_arduinos, frame, trpms)
+    open(camera)
+    while isopen(camera)
+        trpms[] = get_rpms(wind_arduinos)
         frame[] = get_frame(camera)
-        sleep(0.001)
+        sleep(0.0001)
     end
+end
+
+function backup(progress)
+    todo = readpath(datadir)
+    n = length(todo)
+    done = Vector{SystemPath}(undef, n)
+    for (i, folder) in enumerate(todo)
+        tmp = folder / "temp.stream"
+        video = folder / "track.mp4"
+        mux(tmp, video, framerate, silent = true)
+
+        tb = Tar.create(string(folder))
+        source = AbstractPath(tb)
+        name = basename(folder)
+        destination = S3Path(bucket, name * ".tar", config = s3config)
+        mv(source, destination)
+        @assert AWSS3.s3_exists(s3config, "dackebeetle", name * ".tar") "upload failed for $name"
+        push!(done, folder)
+        progress[] = i/n
+    end
+    map(x -> rm(x, recursive = true), done)
 end
 
 
@@ -71,12 +117,6 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
 
     scene, layout = layoutscene()
 
-    filename = Observable("")
-    fanio = Observable{IO}(devnull)
-    on(trpms) do (t, rpms)
-        println(fanio[], t, ",",join(Iterators.flatten(rpms), ","))
-    end
-
     df = Observable(fetch_setups())
     setups = map(parse_setups, df)
     options = map(setups) do x
@@ -94,42 +134,45 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     toggle = LToggle(scene, active = false)
     lable = LText(scene, lift(x -> x ? "recording" : "playing", toggle.active))
 
-    playing = Observable(true)
+
     on(toggle.active) do tf
         if tf
-            name = joinpath(tempdir(), string(now(), " ", label_setup(ui.selection[])))
-            filename[] = name
-            io = open(p"$name.csv", "w")
-            println(io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
-            fanio[] = io
-            playing[] = false
-
-            @async record(camera, name, frame, playing)
+            close(camera)
+            @async record(ui.selection[], camera, wind_arduinos, frame, trpms)
         else 
-            close(fanio[])
-            fanio[] = devnull
-            name = filename[]
-            mv(p"$name.csv", joinpath(s3path, "$name.csv"))
-
-            playing[] = true
-            @async play(camera, frame, playing)
+            close(camera)
+            sleep(1)
+            @async play(camera, wind_arduinos, frame, trpms)
         end
+    end
+
+    progress = Node(0.0)
+
+    upload = LButton(scene, label = "Backup")
+    on(upload.clicks) do _
+        backup(progress)
     end
 
     buttongrid = GridLayout(tellwidth = true, tellheight = true)
     buttongrid[1,1] = update
     buttongrid[1,2] = ui
     buttongrid[1,3] = grid!(hcat(toggle, lable), tellheight = false)
+    buttongrid[1,4] = upload
 
-    img_ax = LAxis(scene, aspect = DataAspect(), xzoomlock = true, yzoomlock = true)
+    pb = LRect(scene, height = 20, width = lift(x -> Relative(x), progress), halign = :left)
+
+    img_ax = LAxis(scene, aspect = DataAspect())
     image!(img_ax, lift(rotr90, frame))
     hidedecorations!(img_ax)
     tightlimits!(img_ax)
+    for interaction in keys(AbstractPlotting.MakieLayout.interactions(img_ax))
+        deregister_interaction!(img_ax, interaction)
+    end
 
     colors = range(Gray(0.0), Gray(0.75), length = 3)
 
     rpmgrid = GridLayout()
-    axs = rpmgrid[:h] = [LAxis(scene, ylabel = "RPM", title = "Fan #$(a.id)", xticklabelsvisible = false, xzoomlock = true, yzoomlock = true) for a in wind_arduinos]
+    axs = rpmgrid[:h] = [LAxis(scene, ylabel = "RPM", title = "Fan #$(a.id)", xticklabelsvisible = false) for a in wind_arduinos]
     for (i, o) in enumerate(rpmlines), (line, color) in zip(o, colors)
         lines!(axs[i], line; color)
     end
@@ -140,14 +183,17 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     end
     linkaxes!(axs...)
     hideydecorations!.(axs[2:end], grid = false)
+    for ax in axs, interaction in keys(AbstractPlotting.MakieLayout.interactions(ax))
+        deregister_interaction!(ax, interaction)
+    end
 
-    layout[1, 1] = img_ax
-    layout[2, 1] = rpmgrid
-    layout[3, 1] = buttongrid
+    layout[1, 1] = buttongrid
+    layout[2, 1] = pb
+    layout[3, 1] = img_ax
+    layout[4, 1] = rpmgrid
 
 
-    playing[] = true
-    @async play(camera, frame, playing)
+    @async play(camera, wind_arduinos, frame, trpms)
 
     on(scene.events.window_open) do tf
         if !tf
