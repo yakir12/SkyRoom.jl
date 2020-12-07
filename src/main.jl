@@ -53,8 +53,7 @@ function record(setup, camera, wind_arduinos, frame, trpms)
     end
     close(fan_io)
 
-    props = [:priv_data => ("crf" => "0", "preset" => "ultrafast")]
-    camera.encoder = prepareencoder(camera.buff, framerate = 10, AVCodecContextProperties = props, codec_name = "libx264rgb")
+    camera.encoder = prepareencoder(camera.buff; framerate, AVCodecContextProperties, codec_name)
 
 end
 
@@ -72,7 +71,7 @@ function backup()
         name = basename(folder)
         video = folder / "track.mp4"
         tmp = folder / "temp.stream"
-        mux(tmp, video, camera.cam.framerate, silent = true)
+        mux(tmp, video, framerate, silent = true)
 
         tb = Tar.create(string(folder))
         source = AbstractPath(tb)

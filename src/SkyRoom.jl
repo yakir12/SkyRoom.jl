@@ -29,6 +29,11 @@ const deadleds = 9
 const cardinals = ["NE", "SW", "SE", "NW"]
 const liveleds = ledsperstrip - deadleds
 
+# camera
+const framerate = 10
+const AVCodecContextProperties = [:priv_data => ("crf" => "0", "preset" => "ultrafast")]
+const codec_name = "libx264rgb"
+
 # experiments
 const setupsurl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNLWhLfp_iuW68j7SM6Px8ysTmbrfmrP_7ipXK9BkfzBgfqn3Mj7ra177mZyHlY5NLA3SDtfYNTROv/pub?gid=0&single=true&output=csv"
 
