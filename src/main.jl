@@ -53,7 +53,7 @@ function record(setup, camera, wind_arduinos, frame, trpms)
     end
     close(fan_io)
 
-    camera.encoder = prepareencoder(camera.buff; framerate, AVCodecContextProperties, codec_name)
+    camera.encoder = prepareencoder(camera.buff; framerate, AVCodecContextProperties)#, codec_name)
 
 end
 
