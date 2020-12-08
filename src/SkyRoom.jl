@@ -30,7 +30,7 @@ const cardinals = ["NE", "SW", "SE", "NW"]
 const liveleds = ledsperstrip - deadleds
 
 # camera
-const framerate = 10
+const framerate = 25
 const AVCodecContextProperties = [:priv_data => ("crf" => "0", "preset" => "ultrafast")]
 const codec_name = "libx264rgb"
 
