@@ -27,10 +27,11 @@ void loop() {
 
 void onPacketReceived(const uint8_t* buffer, size_t size)
 {
-  nstars = size / 4;
+  nstars = size / 5;
   strip.clear();
-  for (int i = 0; i < 4 * nstars; i = i + 4) {
-    strip.setPixelColor(buffer[i], buffer[i + 1], buffer[i + 2], buffer[i + 3]);
+  for (int i = 0; i < 5 * nstars; i = i + 5) {
+      uint16_t combined = (buffer[i] * 256u) + buffer[i + 1];
+    strip.setPixelColor(combined, buffer[i + 2], buffer[i + 3], buffer[i + 4]);
   }
   strip.show();
 }

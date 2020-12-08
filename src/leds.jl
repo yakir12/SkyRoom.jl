@@ -6,10 +6,11 @@ struct Star
 end
 
 struct LED
-    index::UInt8
+    ind1::UInt8
+    ind2::UInt8
     intensity::UInt8
     buff::Vector{UInt8}
-    LED(index, intensity) = new(index, intensity, [index, 0x00, intensity, 0x00])
+    LED(ind1, ind2, intensity) = new(ind1, ind2, intensity, [ind1, ind2, 0x00, intensity, 0x00])
 end
 
 function index2led(c::Int, e)
@@ -17,20 +18,22 @@ function index2led(c::Int, e)
     b = c < 3 ? 0 : ledsperstrip
     pos = a + b - 1
     i = pos == (liveleds - 1)/2 ? ledsperstrip + pos : pos
-    UInt8(i)
+    ind1 = UInt8(i >> 8)
+    ind2 = UInt8(i & 0xff)
+    return ind1, ind2
 end
 
 function LED(s::Star)
     c = findfirst(==(s.cardinality), cardinals)
-    intensity = UInt8(s.intensity)
+    intensity = s.intensity
     map(-s.radius:s.radius) do i
-        index = index2led(c, s.elevation + i)
-        LED(index, intensity)
+        ind1, ind2 = index2led(c, s.elevation + i)
+        LED(ind1, ind2, intensity)
     end
 end
 
 parse2arduino(leds::Vector{LED}) = vcat((led.buff for led in leds)...)
-parse2arduino(stars::Vector{Star}) = isempty(stars) ? zeros(UInt8, 4) : vcat((parse2arduino(LED(star)) for star in stars)...)
+parse2arduino(stars::Vector{Star}) = isempty(stars) ? zeros(UInt8, 5) : vcat((parse2arduino(LED(star)) for star in stars)...)
 
 function parse2stars(starrow)
     stars = Star[]
