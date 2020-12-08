@@ -17,11 +17,12 @@ function index2led(c::Int, e)
     b = c < 3 ? 0 : ledsperstrip
     pos = a + b - 1
     i = pos == (liveleds - 1)/2 ? ledsperstrip + pos : pos
+    UInt8(i)
 end
 
 function LED(s::Star)
     c = findfirst(==(s.cardinality), cardinals)
-    intensity = s.intensity
+    intensity = UInt8(s.intensity)
     map(-s.radius:s.radius) do i
         index = index2led(c, s.elevation + i)
         LED(index, intensity)
