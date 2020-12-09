@@ -129,7 +129,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     ui = LMenu(scene, options = options, width =  Auto())
     update = LButton(scene, label = "Update")
     on(update.clicks) do _
-        df[] = fetch_setups()
+        df[] = fetch_setups(setup_file)
     end
     on(ui.selection) do o
         update_arena!(wind_arduinos, led_arduino, o)
