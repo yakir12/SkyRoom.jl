@@ -71,7 +71,7 @@ function backup()
     todo = readpath(datadir)
     n = length(todo)
     done = Vector{SystemPath}(undef, n)
-    @showprogress 1 "Uploading..." for folder in todo
+    @showprogress 1 "Uploading..." for (i, folder) in enumerate(todo)
         tmp = folder / "temp.stream"
         video = folder / "track.mp4"
         mux(tmp, video, framerate, silent = true)
