@@ -10,6 +10,7 @@ end
 
 label_setup(x) = string("fans=", Int[i.pwm for i in x.fans], "; stars=", join([string(i.cardinality, " ", i.elevation, " ", i.intensity, " ", i.radius) for i in x.stars], ","))
 
+update_arena!(wind_arduinos, led_arduino, ::Nothing) = nothing
 function update_arena!(wind_arduinos, led_arduino, setup)
     for a in wind_arduinos
         a.pwm[] = setup.fans[a.id].pwm

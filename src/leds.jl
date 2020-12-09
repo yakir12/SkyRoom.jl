@@ -13,21 +13,20 @@ struct LED
     LED(ind1, ind2, intensity) = new(ind1, ind2, intensity, [ind1, ind2, 0x00, intensity, 0x00])
 end
 
+
 function index2led(c::Int, e)
     a = isodd(c) ? e : liveleds - e + 1
     b = c < 3 ? 0 : ledsperstrip
     pos = a + b - 1
     i = pos == (liveleds - 1)/2 ? ledsperstrip + pos : pos
-    ind1 = UInt8(i >> 8)
-    ind2 = UInt8(i & 0xff)
-    return ind1, ind2
+    reinterpret(UInt8, [UInt16(i)])
 end
 
 function LED(s::Star)
     c = findfirst(==(s.cardinality), cardinals)
     intensity = s.intensity
     map(-s.radius:s.radius) do i
-        ind1, ind2 = index2led(c, s.elevation + i)
+        ind2, ind1 = index2led(c, s.elevation + i)
         LED(ind1, ind2, intensity)
     end
 end

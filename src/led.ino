@@ -12,26 +12,26 @@ PacketSerial myPacketSerial;
 Adafruit_DotStar strip(NUMPIXELS, DATAPIN, CLOCKPIN, DOTSTAR_BGR);
 
 void setup() {
-  myPacketSerial.begin(9600);
-  myPacketSerial.setPacketHandler(&onPacketReceived);
+    myPacketSerial.begin(9600);
+    myPacketSerial.setPacketHandler(&onPacketReceived);
 
-  strip.begin(); // Initialize pins for output
-  strip.clear();
-  strip.show();  // Turn all LEDs off ASAP
+    strip.begin(); // Initialize pins for output
+    strip.clear();
+    strip.show();  // Turn all LEDs off ASAP
 
 }
 
 void loop() {
-  myPacketSerial.update();
+    myPacketSerial.update();
 }
 
 void onPacketReceived(const uint8_t* buffer, size_t size)
 {
-  nstars = size / 5;
-  strip.clear();
-  for (int i = 0; i < 5 * nstars; i = i + 5) {
-      uint16_t combined = (buffer[i] * 256u) + buffer[i + 1];
-    strip.setPixelColor(combined, buffer[i + 2], buffer[i + 3], buffer[i + 4]);
-  }
-  strip.show();
+    nstars = size / 5;
+    strip.clear();
+    for (int i = 0; i < 5 * nstars; i = i + 5) {
+        int combined = (buffer[i] * 256) + buffer[i + 1];
+        strip.setPixelColor(combined, buffer[i + 2], buffer[i + 3], buffer[i + 4]);
+    }
+    strip.show();
 }
