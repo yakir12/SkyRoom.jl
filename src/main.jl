@@ -152,6 +152,8 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
 
     progress = Node(0.0)
 
+    on(println, progress)
+
     upload = LButton(scene, label = "Backup")
     on(upload.clicks) do _
         close(camera)
