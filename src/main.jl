@@ -1,4 +1,4 @@
-fetch_setups() = CSV.File(HTTP.get(setupsurl).body, header = 1:2) |> DataFrame
+fetch_setups(setup_file) = CSV.File(setup_file, header = 1:2) |> DataFrame
 
 function parse_setups(df)
     map(eachrow(df)) do r
@@ -96,7 +96,6 @@ end
 
 function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"], led_port = "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0", cam_url = "http://130.235.245.118:8080/stream/video.mjpeg")
 
-    # df = CSV.File(setup_file, header = 1:2) |> DataFrame
     wind_arduinos = [FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)]
     led_arduino = LEDArduino(led_port)
     camera = PiCam(cam_url)
@@ -122,7 +121,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
 
     scene, layout = layoutscene()
 
-    df = Observable(fetch_setups())
+    df = Observable(fetch_setups(setup_file))
     setups = map(parse_setups, df)
     options = map(setups) do x
         zip(label_setup.(x), x)
