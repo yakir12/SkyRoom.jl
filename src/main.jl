@@ -73,17 +73,17 @@ function backup(progress)
     n = length(todo)
     done = Vector{SystemPath}(undef, n)
     for (i, folder) in enumerate(todo)
-        tmp = folder / "temp.stream"
-        video = folder / "track.mp4"
-        mux(tmp, video, framerate, silent = true)
-
-        tb = Tar.create(string(folder))
-        source = AbstractPath(tb)
-        name = basename(folder)
-        destination = S3Path(bucket, name * ".tar", config = s3config)
-        mv(source, destination)
-        @assert AWSS3.s3_exists(s3config, "dackebeetle", name * ".tar") "upload failed for $name"
-        done[i] = folder
+        # tmp = folder / "temp.stream"
+        # video = folder / "track.mp4"
+        # mux(tmp, video, framerate, silent = true)
+        #
+        # tb = Tar.create(string(folder))
+        # source = AbstractPath(tb)
+        # name = basename(folder)
+        # destination = S3Path(bucket, name * ".tar", config = s3config)
+        # mv(source, destination)
+        # @assert AWSS3.s3_exists(s3config, "dackebeetle", name * ".tar") "upload failed for $name"
+        # done[i] = folder
         progress[] = i/n
         sleep(0.01)
     end
