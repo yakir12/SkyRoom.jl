@@ -13,7 +13,7 @@ function onerun(setups, wind_arduinos, led_arduino, camera)
         @info "I cannot find your choice, $l, in the available setups" labels
         @goto start
     end
-    md["setup"] = df[i,i]
+    md["setup"] = setups[i,i]
     for _ in 1:3
         update_arena!(wind_arduinos, led_arduino, md["setup"])
     end
