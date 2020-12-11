@@ -46,7 +46,19 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     setups = select(df, :setup_label => identity => :label, r"fan" => ByRow(parse2wind ∘ tuple) => :fans, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
 
     while true
-        onerun(setups, wind_arduinos, led_arduino, camera)
+        try
+            onerun(setups, wind_arduinos, led_arduino, camera)
+        catch ex
+            res = ask("Quit? [Y]/n")
+            if  isempty(res) || occursin(r"^y"i, res)
+                close(camera)
+                close(led_arduino)
+                close.(wind_arduinos)
+                return nothing
+            else
+                continue
+            end
+        end
     end
 end
 
