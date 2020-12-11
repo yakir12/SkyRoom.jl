@@ -49,6 +49,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
         try
             onerun(setups, wind_arduinos, led_arduino, camera)
         catch ex
+            @show ex
             res = ask("Quit? [Y]/n")
             if  isempty(res) || occursin(r"^y"i, res)
                 close(camera)
