@@ -13,9 +13,9 @@ function onerun(setups, wind_arduinos, led_arduino, camera)
         @info "I cannot find your choice, $l, in the available setups" labels
         @goto start
     end
-    md["setup"] = setups[i,:]
+    md["setup"] = label_setup(setups[i,:])
     for _ in 1:3
-        update_arena!(wind_arduinos, led_arduino, md["setup"])
+        update_arena!(wind_arduinos, led_arduino, setups[i,:])
     end
     ask("Press Enter to start recording")
     md["recording_time"] = string(now())
@@ -118,3 +118,4 @@ function backup()
     end
 end
 
+label_setup(x) = string("fans=", Int[i.pwm for i in x.fans], "; stars=", [string(i.cardinality, " ", i.elevation, " ", i.intensity, " ", i.radius) for i in x.stars])
