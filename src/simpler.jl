@@ -43,7 +43,7 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     camera = PiCam(cam_url)
 
     df = CSV.File(setup_file, header = 1:2) |> DataFrame
-    setups = select(df, r -> (; label = r.label, fans = parse2wind(r[r"fan"]), stars = parse2stars(r[r"star"])))
+    setups = select(df, :setup_label => identity => :label, r"fan" => ByRow(parse2wind ∘ tuple) => :fans, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
 
     while true
         onerun(setups, wind_arduinos, led_arduino, camera)
