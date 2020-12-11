@@ -13,7 +13,7 @@ function onerun(setups, wind_arduinos, led_arduino, camera)
         @info "I cannot find your choice, $l, in the available setups" labels
         @goto start
     end
-    md["setup"] = setups[i,i]
+    md["setup"] = setups[i,:]
     for _ in 1:3
         update_arena!(wind_arduinos, led_arduino, md["setup"])
     end
@@ -49,12 +49,12 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
         try
             onerun(setups, wind_arduinos, led_arduino, camera)
         catch ex
-            @show ex
             res = ask("Quit? [Y]/n")
             if  isempty(res) || occursin(r"^y"i, res)
                 close(camera)
                 close(led_arduino)
                 close.(wind_arduinos)
+                throw(ex)
                 return nothing
             else
                 continue
