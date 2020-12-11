@@ -100,10 +100,6 @@ function main(; setup_file = HTTP.get(setupsurl).body, fan_ports = ["/dev/serial
     frame = Observable(camera.buff)
 
     trpms = Observable(get_rpms(wind_arduinos))
-    reading_fans = @async while all(isopen, wind_arduinos)
-        trpms[] = get_rpms(wind_arduinos)
-        sleep(0.001) # rm later
-    end
 
     history = 50
     rpmlines = [[Observable(CircularBuffer{Point2f0}(history)) for _ in 1:3] for _ in wind_arduinos] # put in zeros

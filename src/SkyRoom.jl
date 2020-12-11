@@ -53,16 +53,24 @@ using FixedPointNumbers
 using VideoIO
 include("camera.jl")
 
+# import ProgressMeter
+# using ProgressMeter: @showprogress
+# using GLMakie
+# using AbstractPlotting
+# using AbstractPlotting.MakieLayout
+# using DataStructures
+# using CSV, DataFrames
+# using HTTP
+# using Tar
+# include("main.jl")
+
 import ProgressMeter
 using ProgressMeter: @showprogress
-using GLMakie
-using AbstractPlotting
-using AbstractPlotting.MakieLayout
 using DataStructures
 using CSV, DataFrames
 using HTTP
 using Tar
-include("main.jl")
+include("simpler.jl")
 
 end # module
 
