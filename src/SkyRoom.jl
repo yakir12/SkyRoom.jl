@@ -70,6 +70,7 @@ using DataStructures
 using CSV, DataFrames
 using HTTP
 using Tar
+import Pkg.TOML
 include("simpler.jl")
 
 end # module
