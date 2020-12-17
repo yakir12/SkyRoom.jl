@@ -136,7 +136,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
     md = Dict()
 
     setup_file = HTTP.get(setupsurl["skyroom"]).body
-    df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String)) |> DataFrame
+    df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String)  |> TableOperations.transform(setup_label = strip) |> DataFrame
 
     setuplog = similar(df[1:1,:])
     setuplog[:, :time] .= now()
@@ -245,7 +245,7 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
 
     md = Dict()
     setup_file = HTTP.get(setupsurl["skyroom2"]).body
-    df = CSV.File(setup_file, header = 1:2) |> DataFrame
+    df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String)  |> TableOperations.transform(setup_label = strip) |> DataFrame
     setups = select(df, :setup_label => identity => :label, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
     options = collect(df.setup_label)
     option = Node(first(options))
