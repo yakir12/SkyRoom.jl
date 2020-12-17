@@ -23,12 +23,12 @@ function restart(a::SkyRoom2)
 end
 
 
-mutable struct SkyRoom
+mutable struct SkyRoom1
     wind_arduinos::Vector{FanArduino}
     led_arduino::LEDArduino
     camera::PiCamera
     data::Observable
-    function SkyRoom()
+    function SkyRoom1()
         wind_arduinos = [FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)]
         led_arduino = LEDArduino(led_port["skyroom"])
         camera = PiCamera(30, 67, 67, 4)
@@ -37,12 +37,12 @@ mutable struct SkyRoom
     end
 end
 
-connect!(a::SkyRoom) = @async while all(isopen, a.wind_arduinos) && isopen(a.camera)
+connect!(a::SkyRoom1) = @async while all(isopen, a.wind_arduinos) && isopen(a.camera)
     a.data[] = (; frame = snap(a.camera), trpms = get_rpms(a.wind_arduinos))
     sleep(0.01)
 end
 
-function restart(a::SkyRoom)
+function restart(a::SkyRoom1)
     empty!(a.data.listeners)
     restart.(a.wind_arduinos)
     restart(a.led_arduino)
@@ -56,7 +56,7 @@ function main(le)
         skyroom2 = SkyRoom2()
         app = JSServe.Application((a, b) -> dom_handler(skyroom2, left2upload, a, b), "0.0.0.0", port);
     else
-        skyroom = SkyRoom()
+        skyroom = SkyRoom1()
         app = JSServe.Application((a, b) -> dom_handler(skyroom, left2upload, a, b), "0.0.0.0", port);
     end
 end
@@ -110,7 +110,7 @@ function todict(setup)
 end
 
 
-function dom_handler(sr::SkyRoom, left2upload, session, request)
+function dom_handler(sr::SkyRoom1, left2upload, session, request)
 
     restart(sr)
 
