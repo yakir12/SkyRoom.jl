@@ -12,5 +12,5 @@
 
 ## Bottom-floor sky-room (Nicolas Cage)
 - [Link to setups file](https://docs.google.com/spreadsheets/d/1PJPT2xJ6Ggx-byg4FRdIbIkDWuJxN28zpATHAGHpgLY/edit?usp=sharing)
-- [Link to GUI](https://130.235.245.92:8082/)
+- [Link to GUI](http://130.235.245.92:8082/)
 - [Link to results](https://nicolas-cage-skyroom.s3.eu-north-1.amazonaws.com/list.html)
