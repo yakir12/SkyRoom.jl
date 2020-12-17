@@ -7,8 +7,11 @@ using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
 
-# const picamera = pyimport("picamera")
-const io =  pyimport("io")
+
+function __init__()
+    picamera = pyimport("picamera")
+    io =  pyimport("io")
+end
 
 const datadir = p"/home/pi/mnt/data"
 isdir(datadir) || mkpath(datadir)
