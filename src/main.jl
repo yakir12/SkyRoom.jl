@@ -66,14 +66,16 @@ function dropdown(options, option)
     DOM.select(DOM.option.(options); class="bandpass-dropdown", onclick=dropdown_onchange)
 end
 
-
-function record(folder, fan_io, wind_arduinos, camera)
-    fan_io1 = open(folder / "fans.csv", "w")
-    println(fan_io1, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
-    fan_io[] = fan_io1
-    file = string(folder / "video.h264")
-    camera.start_recording(file)
+function recordfans(trpms, folder)
+    fan_io = open(folder / "fans.csv", "w")
+    println(fan_io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
+    on(trpms) do (t, rpms)
+        println(fan_io, t, ",",join(Iterators.flatten(rpms), ","))
+    end
 end
+
+
+
 
 # label_setup(x) = string("fans=", Int[i.pwm for i in x.fans], "; stars=", [string(i.cardinality, " ", i.elevation, " ", i.intensity, " ", i.radius) for i in x.stars])
 
@@ -125,17 +127,13 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
         [ismissing(x) ? 0.0 : x for x in Iterators.flatten(x)]
     end
 
-    tmpio = open(tempname(), "w")
-    close(tmpio)
-    fan_io = Node{IO}(tmpio)
-
     on(trpms) do (t, rpms)
         println(fan_io[], t, ",",join(Iterators.flatten(rpms), ","))
     end
 
     md = Dict()
 
-    setup_file = HTTP.get(setupsurl["skyroom"]).body
+    setup_file = HTTP.get(setupsurl["skyroom"], retry = 4).body
     df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String))  |> TableOperations.transform(setup_label = strip) |> DataFrame
 
     setuplog = similar(df[1:1,:])
@@ -161,21 +159,25 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
 
     # GC.gc(true)
 
+    fanrecording = Observable(recordfans(trpms, tempdir()))
+    off(trpms, fanrecording[])
+
     recordingtime = Node(now())
     timestamp = map(string, recordingtime)
     timestamp[] = ""
     recording = JSServe.Checkbox(false)
+
     on(recording) do tf
         if tf
             delete!(setuplog, 1:nrow(setuplog) - 1)
             recordingtime[] = now()
             folder = datadir / timestamp[]
             mkdir(folder)
-            record(folder, fan_io, sr.wind_arduinos, sr.camera.cam)
+            camera.start_recording(string(folder / "video.h264"))
+            fanrecording[] = recordfans(trpms, folder)
         else
+            off(trpms, fanrecording[])
             sr.camera.cam.stop_recording()
-            close(fan_io[])
-            fan_io[] = tmpio
         end
     end
     comment = JSServe.TextField("")
@@ -244,7 +246,7 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
     restart(sr)
 
     md = Dict()
-    setup_file = HTTP.get(setupsurl["skyroom2"]).body
+    setup_file = HTTP.get(setupsurl["skyroom2"], retry = 4).body
     df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String))  |> TableOperations.transform(setup_label = strip) |> DataFrame
     setups = select(df, :setup_label => identity => :label, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
     options = collect(df.setup_label)
