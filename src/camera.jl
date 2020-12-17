@@ -1,23 +1,34 @@
-mutable struct PiCam
-    url::String
-    cam::VideoIO.VideoReader
-    buff
-    encoder
-    function PiCam(url::String)
-        cam = VideoIO.openvideo(url)
-        buff = read(cam)
-        encoder = prepareencoder(buff; framerate, AVCodecContextProperties, codec_name)
-        new(url, cam, buff, encoder)
+mutable struct PiCamera
+    cam::PyObject
+    framerate::Int
+    resolution::Tuple{Int, Int}
+    resize::Tuple{Int, Int}
+    function PiCamera(framerate::Int, W::Int, H::Int, r::Int)
+        cam = picamera.PiCamera()
+        resolution = (16W, 16H)
+        cam.resolution = resolution
+        cam.framerate = framerate
+        resize = resolution .÷ r
+        new(cam, framerate, resolution, resize)
     end
 end
 
-get_frame(c) = read!(c.cam, c.buff)
-
-Base.isopen(c::PiCam) = isopen(c.cam)
-Base.close(c::PiCam) = isopen(c) && close(c.cam)
-function Base.open(c::PiCam) 
-    if !isopen(c) 
-        c.cam = VideoIO.openvideo(c.url)
-    end
+Base.isopen(a::PiCamera) = !a.cam.closed
+Base.close(a::PiCamera) = isopen(a) && a.cam.close()
+function Base.open(a::PiCamera) 
+    close(a)
+    cam = picamera.PiCamera()
+    cam.resolution = a.resolution
+    cam.framerate = a.framerate
+    a.cam = cam
 end
-restart(c::PiCam) = (close(c); open(c))
+restart(a::PiCamera) = (close(a); open(a))
+
+function snap(camera::PiCamera)
+    stream = io.BytesIO()
+    camera.cam.capture(stream, splitter_port = 0, resize = camera.resize, format = "jpeg", use_video_port = true)
+    stream.seek(0)
+    buffer = IOBuffer(stream.read())
+    load(buffer)
+end
+

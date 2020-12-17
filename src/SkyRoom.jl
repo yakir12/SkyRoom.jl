@@ -2,24 +2,23 @@ module SkyRoom
 
 export main
 
-using FilePathsBase
+using PyCall, Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, DataFrames, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, LibSerialPort, Observables
 using FilePathsBase: /
-using AWSS3
+using JSServe.DOM
+using JSServe: @js_str
 
-const bucket = "s3://dackebeetle"
-tmp = S3Path(bucket)
-tmp.config.region = "eu-north-1"
-s3config = tmp.config
+const picamera = pyimport("picamera")
+const io =  pyimport("io")
 
-const baudrate = 9600
-
-const datadir = home() / "data"
+const datadir = p"/home/pi/mnt/data"
 isdir(datadir) || mkpath(datadir)
 
 # Fans
+const baudrate = 9600
 const t4 = 15000000
 const top_rpm = 12650
 const shortest_t = t4/1.1top_rpm
+const fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]
 
 # LED 
 const strips = 2
@@ -28,51 +27,17 @@ const brightness = 1
 const deadleds = 9
 const cardinals = ["NE", "SW", "SE", "NW"]
 const liveleds = ledsperstrip - deadleds
+const led_port = Dict("skyroom" => "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00", "skyroom2" => "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0")
 
-# camera
-const framerate = 25
-const AVCodecContextProperties = [:priv_data => ("crf" => "0", "preset" => "ultrafast")]
-const codec_name = "libx264rgb"
-
-# experiments
-const setupsurl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNLWhLfp_iuW68j7SM6Px8ysTmbrfmrP_7ipXK9BkfzBgfqn3Mj7ra177mZyHlY5NLA3SDtfYNTROv/pub?gid=0&single=true&output=csv"
+const setupsurl = Dict("skyroom" => "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNLWhLfp_iuW68j7SM6Px8ysTmbrfmrP_7ipXK9BkfzBgfqn3Mj7ra177mZyHlY5NLA3SDtfYNTROv/pub?gid=0&single=true&output=csv", "skyroom2" => "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv")
+const port = 8082
 
 include("cobs.jl")
-
-using LibSerialPort
 include("abstractarduinos.jl")
-
-using Observables
 include("leds.jl")
-
-using Dates
 include("winds.jl")
-
-using Colors
-using FixedPointNumbers
-using VideoIO
 include("camera.jl")
-
-# import ProgressMeter
-# using ProgressMeter: @showprogress
-# using GLMakie
-# using AbstractPlotting
-# using AbstractPlotting.MakieLayout
-# using DataStructures
-# using CSV, DataFrames
-# using HTTP
-# using Tar
-# include("main.jl")
-
-import ProgressMeter
-using ProgressMeter: @showprogress
-using DataStructures
-using CSV, DataFrames
-using HTTP
-using Tar
-import Pkg.TOML
-include("simpler.jl")
 
 end # module
 
-# AWSS3 AbstractPlotting CSV Colors DataFrames DataStructures FilePathsBase FixedPointNumbers GLMakie HTTP LibSerialPort Observables VideoIO Dates
+# PyCall, Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, DataFrames, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, LibSerialPort, Observables

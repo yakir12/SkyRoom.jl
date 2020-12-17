@@ -45,16 +45,18 @@ function parse2stars(starrow)
     return stars
 end
 
-struct LEDArduino <: AbstractArduino
+mutable struct LEDArduino <: AbstractArduino
     port::String
     sp::SerialPort
-    msg::Observable{Vector{UInt8}}
+    pwm::Observable{Vector{UInt8}}
     function LEDArduino(port::String)
         sp = LibSerialPort.open(port, baudrate)
-        msg = Observable(UInt8[0, 0])
-        on(msg) do x
-            encode(sp, x)
-        end
-        new(port, sp, msg)
+        pwm = Observable(UInt8[0, 0])
+        new(port, sp, pwm)
     end
 end
+
+connect!(a::LEDArduino) = on(a.pwm) do x
+    encode(a.sp, x)
+end
+
