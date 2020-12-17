@@ -136,7 +136,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
     md = Dict()
 
     setup_file = HTTP.get(setupsurl["skyroom"]).body
-    df = CSV.File(setup_file, header = 1:2) |> DataFrame
+    df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String)) |> DataFrame
 
     setuplog = similar(df[1:1,:])
     setuplog[:, :time] .= now()
@@ -287,7 +287,7 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
         beetleid[] = ""
     end
     upload = JSServe.Button("Backup")
-    on(_ -> backup(left2upload, "top-room-skyroom2"), upload)
+    on(_ -> backup(left2upload, "top-floor-skyroom2"), upload)
     left2upload_label = map(left2upload) do i
         if i > 0
             string(round(Int, 100i), "% left to upload...")
