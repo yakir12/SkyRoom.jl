@@ -317,7 +317,7 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
 
     # GC.gc(true)
 
-    # print_sizes()
+    print_sizes()
 
     return DOM.div(
         DOM.div(frameplot),
