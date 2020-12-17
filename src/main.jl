@@ -159,7 +159,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
     end
 
 
-    GC.gc(true)
+    # GC.gc(true)
 
     recordingtime = Node(now())
     timestamp = map(string, recordingtime)
@@ -210,7 +210,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
         end
     end
 
-    GC.gc(true)
+    # GC.gc(true)
 
     colors = repeat(1:5, inner = [3])
     rpmx = vcat(((i - 1)*4 + 1 : 4i - 1 for i in 1:5)...)
@@ -222,9 +222,9 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
     frameplot = image(frame, scale_plot = false, show_axis = false)
     disconnect!(AbstractPlotting.camera(frameplot))
 
-    GC.gc(true)
+    # GC.gc(true)
 
-    print_sizes()
+    # print_sizes()
 
     return DOM.div(
         DOM.div(rpmplot),
@@ -261,7 +261,7 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
         end
     end
 
-    GC.gc(true)
+    # GC.gc(true)
 
     recordingtime = Node(now())
     timestamp = map(string, recordingtime)
@@ -308,12 +308,12 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
         end
     end
 
-    GC.gc(true)
+    # GC.gc(true)
 
     frameplot = image(sr.frame, scale_plot = false, show_axis = false)
     disconnect!(AbstractPlotting.camera(frameplot))
 
-    GC.gc(true)
+    # GC.gc(true)
 
     print_sizes()
 
@@ -328,13 +328,32 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
     )
 end
 
-function print_sizes()
-    sizes = sort(filter(x-> x[2] > 5*(10^6), map(collect(values(Base.loaded_modules))) do m
-                            m=>Base.summarysize(m)
-                        end), rev=true, by=last)
-    foreach(((m, s),)-> println(m, ": ", Base.format_bytes(s)), sizes)
-    println("Free: ", Base.format_bytes(Sys.free_memory()))
-end
+# function print_sizes()
+#     sizes = sort(filter(x-> x[2] > 5*(10^6), map(collect(values(Base.loaded_modules))) do m
+#                             m=>Base.summarysize(m)
+#                         end), rev=true, by=last)
+#     foreach(((m, s),)-> println(m, ": ", Base.format_bytes(s)), sizes)
+#     println("Free: ", Base.format_bytes(Sys.free_memory()))
+# end
 
+using DataStructures
+function print_sizes()
+    mem = OrderedDict{Module, OrderedDict{Symbol, Int}}(m => OrderedDict{Symbol, Int}() for m in values(Base.loaded_modules))
+    for m in keys(mem), vs in names(m, all = true)
+        if isdefined(m, vs)
+            v = getfield(m, vs)
+            x = Base.summarysize(v)
+            if x > 10^7
+                mem[m][vs] = x
+            end
+        end
+    end
+    filter!(!isempty ∘ last, mem)
+    for (k,v) in mem
+        sort!(v)
+    end
+    map(println, sort(collect(pairs(mem)), by = x -> sum(last, last(x))))
+end
+allsizes()
 
 # close(led_arduino); close.(wind_arduinos); camera.close()
