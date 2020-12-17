@@ -315,7 +315,7 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
 
     # GC.gc(true)
 
-    print_sizes()
+    # print_sizes()
 
     return DOM.div(
         DOM.div(frameplot),
@@ -336,25 +336,25 @@ end
 #     println("Free: ", Base.format_bytes(Sys.free_memory()))
 # end
 
-using DataStructures
-function print_sizes()
-    mem = OrderedDict{Module, OrderedDict{Symbol, Int}}(m => OrderedDict{Symbol, Int}() for m in values(Base.loaded_modules))
-    for m in keys(mem), vs in names(m, all = true)
-        if isdefined(m, vs)
-            v = getfield(m, vs)
-            x = Base.summarysize(v)
-            if x > 10^6
-                mem[m][vs] = x
-            end
-        end
-    end
-    filter!(!isempty ∘ last, mem)
-    for (k,v) in mem
-        sort!(v, rev = true)
-    end
-    x = OrderedDict(sort(collect(pairs(mem)), rev = true, by = x -> sum(last, last(x))))
-    for (k, v) in x, (kk,vv) in v
-        println(k, ": ", kk, " ",  Base.format_bytes(vv))
-    end
-end
-
+# using DataStructures
+# function print_sizes()
+#     mem = OrderedDict{Module, OrderedDict{Symbol, Int}}(m => OrderedDict{Symbol, Int}() for m in values(Base.loaded_modules))
+#     for m in keys(mem), vs in names(m, all = true)
+#         if isdefined(m, vs)
+#             v = getfield(m, vs)
+#             x = Base.summarysize(v)
+#             if x > 10^6
+#                 mem[m][vs] = x
+#             end
+#         end
+#     end
+#     filter!(!isempty ∘ last, mem)
+#     for (k,v) in mem
+#         sort!(v, rev = true)
+#     end
+#     x = OrderedDict(sort(collect(pairs(mem)), rev = true, by = x -> sum(last, last(x))))
+#     for (k, v) in x, (kk,vv) in v
+#         println(k, ": ", kk, " ",  Base.format_bytes(vv))
+#     end
+# end
+#
