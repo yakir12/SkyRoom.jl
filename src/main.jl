@@ -352,7 +352,7 @@ function print_sizes()
     sort!(mem, by = last, rev = true)
     n = length(mem)
     if n > 15
-        deleteat!(a, 16:n)
+        deleteat!(mem, 16:n)
     end
     println("Memory usage:")
     for (txt, i) in mem
