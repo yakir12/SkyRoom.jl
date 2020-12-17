@@ -354,6 +354,5 @@ function print_sizes()
     end
     map(println, sort(collect(pairs(mem)), by = x -> sum(last, last(x))))
 end
-allsizes()
 
 # close(led_arduino); close.(wind_arduinos); camera.close()
