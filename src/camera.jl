@@ -4,7 +4,7 @@ mutable struct PiCamera
     resolution::Tuple{Int, Int}
     resize::Tuple{Int, Int}
     function PiCamera(framerate::Int, W::Int, H::Int, r::Int)
-        cam = picamera.PiCamera()
+        cam = py"PC"()
         resolution = (16W, 16H)
         cam.resolution = resolution
         cam.framerate = framerate
@@ -25,7 +25,7 @@ end
 restart(a::PiCamera) = (close(a); open(a))
 
 function snap(camera::PiCamera)
-    stream = io.BytesIO()
+    stream = py"PIO"()
     camera.cam.capture(stream, splitter_port = 0, resize = camera.resize, format = "jpeg", use_video_port = true)
     stream.seek(0)
     buffer = IOBuffer(stream.read())

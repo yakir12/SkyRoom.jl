@@ -7,10 +7,21 @@ using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
 
+# picamera = pyimport("picamera")
+# io =  pyimport("io")
 
 function __init__()
-    picamera = pyimport("picamera")
-    io =  pyimport("io")
+    py"""
+    import picamera
+    import io
+
+    def PC():
+        return picamera.PiCamera()
+
+    def PIO():
+        return io.BytesIO()
+    """
+
 end
 
 const datadir = p"/home/pi/mnt/data"
