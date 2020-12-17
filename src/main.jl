@@ -350,7 +350,13 @@ function print_sizes()
         end
     end
     sort!(mem, by = last, rev = true)
+    n = length(mem)
+    if n > 15
+        deleteat!(a, 16:n)
+    end
+    println("Memory usage:")
     for (txt, i) in mem
         println(txt, Base.format_bytes(i))
     end
+    println("")
 end
