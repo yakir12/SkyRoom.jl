@@ -228,6 +228,8 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
 
     print_sizes()
 
+    empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
+
     return DOM.div(
         DOM.div(rpmplot),
         DOM.div(frameplot),
@@ -318,6 +320,8 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
     # GC.gc(true)
 
     print_sizes()
+
+    empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
 
     return DOM.div(
         DOM.div(frameplot),
