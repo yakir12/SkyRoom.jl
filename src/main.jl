@@ -343,16 +343,18 @@ function print_sizes()
         if isdefined(m, vs)
             v = getfield(m, vs)
             x = Base.summarysize(v)
-            if x > 10^7
+            if x > 10^6
                 mem[m][vs] = x
             end
         end
     end
     filter!(!isempty ∘ last, mem)
     for (k,v) in mem
-        sort!(v)
+        sort!(v, rev = true)
     end
-    map(println, sort(collect(pairs(mem)), by = x -> sum(last, last(x))))
+    x = OrderedDict(sort(collect(pairs(mem)), rev = true, by = x -> sum(last, last(x))))
+    for (k, v) in x, (kk,vv) in v
+        println(k, ": ", kk, " ",  Base.format_bytes(vv))
+    end
 end
 
-# close(led_arduino); close.(wind_arduinos); camera.close()

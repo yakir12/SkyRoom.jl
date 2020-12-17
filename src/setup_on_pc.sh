@@ -17,16 +17,16 @@ awb_auto_is_greyworld=1
 start_x=1
 gpu_mem=128" >> /media/yakir/boot/config.txt 
 
-echo "[pi4]
-# Disable the PWR LED
-dtparam=pwr_led_trigger=none
-dtparam=pwr_led_activelow=off
-# Disable the Activity LED
-dtparam=act_led_trigger=none
-dtparam=act_led_activelow=off
-# Disable ethernet port LEDs
-dtparam=eth_led0=4
-dtparam=eth_led1=4" >> /media/yakir/boot/config.txt 
+# echo "[pi4]
+# # Disable the PWR LED
+# dtparam=pwr_led_trigger=none
+# dtparam=pwr_led_activelow=off
+# # Disable the Activity LED
+# dtparam=act_led_trigger=none
+# dtparam=act_led_activelow=off
+# # Disable ethernet port LEDs
+# dtparam=eth_led0=4
+# dtparam=eth_led1=4" >> /media/yakir/boot/config.txt 
 
 # harden ssh
 sudo tee -a /media/yakir/rootfs/etc/ssh/sshd_config > /dev/null <<EOT
@@ -47,7 +47,7 @@ touch /media/yakir/boot/SSH
 # prepare auto mount
 mkdir /media/yakir/rootfs/home/pi/mnt
 chmod 770 /media/yakir/rootfs/home/pi/mnt
-echo "PARTUUID=78c0b7af-fa04-46d0-b119-3d80fe55942e /home/pi/mnt ext4 defaults,users,nofail 0 0" | sudo tee -a /media/yakir/rootfs/etc/fstab > /dev/null
+# echo "PARTUUID=78c0b7af-fa04-46d0-b119-3d80fe55942e /home/pi/mnt ext4 defaults,users,nofail 0 0" | sudo tee -a /media/yakir/rootfs/etc/fstab > /dev/null
 
 # change hostname
 sudo sed -i 's/raspberrypi/skyroom2/g' /etc/hostname 
