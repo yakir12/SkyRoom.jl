@@ -159,7 +159,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
 
     # GC.gc(true)
 
-    fanrecording = Observable(recordfans(trpms, tmpdir(), [a.id for a in wind_arduinos]))
+    fanrecording = Observable(recordfans(trpms, tmpdir(), [a.id for a in sr.wind_arduinos]))
     off(trpms, fanrecording[])
 
     recordingtime = Node(now())
@@ -174,7 +174,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
             folder = datadir / timestamp[]
             mkdir(folder)
             camera.start_recording(string(folder / "video.h264"))
-            fanrecording[] = recordfans(trpms, folder, [a.id for a in wind_arduinos])
+            fanrecording[] = recordfans(trpms, folder, [a.id for a in sr.wind_arduinos])
         else
             off(trpms, fanrecording[])
             sr.camera.cam.stop_recording()
