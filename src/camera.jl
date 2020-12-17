@@ -17,7 +17,7 @@ Base.isopen(a::PiCamera) = !a.cam.closed
 Base.close(a::PiCamera) = isopen(a) && a.cam.close()
 function Base.open(a::PiCamera) 
     close(a)
-    cam = picamera.PiCamera()
+    cam = py"PC"()
     cam.resolution = a.resolution
     cam.framerate = a.framerate
     a.cam = cam
