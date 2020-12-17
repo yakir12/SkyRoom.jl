@@ -173,7 +173,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
             recordingtime[] = now()
             folder = datadir / timestamp[]
             mkdir(folder)
-            camera.cam.start_recording(string(folder / "video.h264"))
+            sr.camera.cam.start_recording(string(folder / "video.h264"))
             fanrecording[] = recordfans(trpms, folder, [a.id for a in sr.wind_arduinos])
         else
             off(trpms, fanrecording[])
