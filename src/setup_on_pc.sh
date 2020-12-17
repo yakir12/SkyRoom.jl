@@ -11,6 +11,10 @@ sudo mount /dev/sda2 /media/yakir/rootfs
 # julia 1.3.1
 wget https://julialang-s3.julialang.org/bin/linux/armv7l/1.3/julia-1.3.1-linux-armv7l.tar.gz -q -O - | tar -xzf - -C /media/yakir/rootfs/home/pi/
 
+# julia 1.6
+wget https://s3.amazonaws.com/julialangnightlies/assert_pretesting/linux/armv7l/1.6/julia-a8393c4a3b-linuxarmv7l.tar.gz -q -O - | tar -xzf - -C /media/yakir/rootfs/home/pi/
+
+
 # kill on board LEDs and allow greyworld
 echo "disable_camera_led=1
 awb_auto_is_greyworld=1

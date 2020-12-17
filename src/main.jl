@@ -66,9 +66,9 @@ function dropdown(options, option)
     DOM.select(DOM.option.(options); class="bandpass-dropdown", onclick=dropdown_onchange)
 end
 
-function recordfans(trpms, folder)
+function recordfans(trpms, folder, ids)
     fan_io = open(folder / "fans.csv", "w")
-    println(fan_io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in wind_arduinos], ","))
+    println(fan_io, "time,", join([join(["fan$(id)_speed$j" for j in 1:3], ",") for id in ids], ","))
     on(trpms) do (t, rpms)
         println(fan_io, t, ",",join(Iterators.flatten(rpms), ","))
     end
@@ -159,7 +159,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
 
     # GC.gc(true)
 
-    fanrecording = Observable(recordfans(trpms, tmpdir()))
+    fanrecording = Observable(recordfans(trpms, tmpdir(), [a.id for a in wind_arduinos]))
     off(trpms, fanrecording[])
 
     recordingtime = Node(now())
@@ -174,7 +174,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
             folder = datadir / timestamp[]
             mkdir(folder)
             camera.start_recording(string(folder / "video.h264"))
-            fanrecording[] = recordfans(trpms, folder)
+            fanrecording[] = recordfans(trpms, folder, [a.id for a in wind_arduinos])
         else
             off(trpms, fanrecording[])
             sr.camera.cam.stop_recording()
