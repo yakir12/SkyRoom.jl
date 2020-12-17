@@ -158,6 +158,9 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
         end
     end
 
+
+    GC.gc(true)
+
     recordingtime = Node(now())
     timestamp = map(string, recordingtime)
     timestamp[] = ""
@@ -207,6 +210,8 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
         end
     end
 
+    GC.gc(true)
+
     colors = repeat(1:5, inner = [3])
     rpmx = vcat(((i - 1)*4 + 1 : 4i - 1 for i in 1:5)...)
     rpmplot = Scene(show_axis = false, resolution = (540, round(Int, 3*5 + 3*540/(3*5+4))))
@@ -216,6 +221,10 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
 
     frameplot = image(frame, scale_plot = false, show_axis = false)
     disconnect!(AbstractPlotting.camera(frameplot))
+
+    GC.gc(true)
+
+    print_sizes()
 
     return DOM.div(
         DOM.div(rpmplot),
@@ -227,6 +236,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
         DOM.div(save),
         DOM.div(upload, left2upload_label)
     )
+
 end
 
 function dom_handler(sr::SkyRoom2, left2upload, session, request)
@@ -250,6 +260,8 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
             sleep(0.05)
         end
     end
+
+    GC.gc(true)
 
     recordingtime = Node(now())
     timestamp = map(string, recordingtime)
@@ -296,8 +308,14 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
         end
     end
 
+    GC.gc(true)
+
     frameplot = image(sr.frame, scale_plot = false, show_axis = false)
     disconnect!(AbstractPlotting.camera(frameplot))
+
+    GC.gc(true)
+
+    print_sizes()
 
     return DOM.div(
         DOM.div(frameplot),
@@ -310,6 +328,13 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
     )
 end
 
+function print_sizes()
+    sizes = sort(filter(x-> x[2] > 5*(10^6), map(collect(values(Base.loaded_modules))) do m
+                            m=>Base.summarysize(m)
+                        end), rev=true, by=last)
+    foreach(((m, s),)-> println(m, ": ", Base.format_bytes(s)), sizes)
+    println("Free: ", Base.format_bytes(Sys.free_memory()))
+end
 
 
 # close(led_arduino); close.(wind_arduinos); camera.close()
