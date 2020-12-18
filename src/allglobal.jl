@@ -20,7 +20,8 @@ isdir(datadir) || mkpath(datadir)
 const nicolas = true#Base.Libc.gethostname() == "nicolas"
 
 # Fans
-const fan_const = nicolas ? (baudrate = 9600, t4 = 15000000, top_rpm = 12650, shortest_t = t4/1.1top_rpm, fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]) : nothing
+top_rpm = 12650
+const fan_const = nicolas ? (baudrate = 9600, t4 = 15000000, top_rpm = top_rpm, shortest_t = t4/1.1top_rpm, fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]) : nothing
 
 # LED 
 const led_const = (strips = 2, ledsperstrip = 150, brightness = 1, deadleds = 9, cardinals = ["NE", "SW", "SE", "NW"], liveleds = ledsperstrip - deadleds, port = nicolas ? "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00" : "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0")
