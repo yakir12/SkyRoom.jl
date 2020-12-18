@@ -402,15 +402,3 @@ end
 #     end
 #     println("")
 # end
-
-
-    left2upload = Observable(0.0)
-    if  Base.Libc.gethostname() == "sheldon"
-        skyroom2 = SkyRoom2()
-        app = JSServe.Application((a, b) -> dom_handler(skyroom2, left2upload, a, b), "0.0.0.0", port);
-    elseif Base.Libc.gethostname() == "nicolas"
-        skyroom = SkyRoom1()
-        app = JSServe.Application((a, b) -> dom_handler(skyroom, left2upload, a, b), "0.0.0.0", port);
-    else
-        error("where am I")
-    end
