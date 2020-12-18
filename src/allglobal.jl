@@ -22,8 +22,6 @@ const nicolas = true#Base.Libc.gethostname() == "nicolas"
 
 const setupsurl = nicolas ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNLWhLfp_iuW68j7SM6Px8ysTmbrfmrP_7ipXK9BkfzBgfqn3Mj7ra177mZyHlY5NLA3SDtfYNTROv/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
 
-rpmplt_cont = (colors = repeat(1:5, inner = [3]), x = vcat(((i - 1)*4 + 1 : 4i - 1 for i in 1:5)...), y = top_rpm*ones(3*5), resolution = (540, round(Int, 3*5 + 3*540/(3*5+4))))
-
 include("cobs.jl")
 include("abstractarduinos.jl")
 include("leds.jl")

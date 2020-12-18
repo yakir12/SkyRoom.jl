@@ -3,6 +3,8 @@ const t4 = 15000000
 const baudrate = 9600
 const shortest_t = t4/1.1top_rpm
 const fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]
+const rpmplt_cont = (colors = repeat(1:5, inner = [3]), x = vcat(((i - 1)*4 + 1 : 4i - 1 for i in 1:5)...), y = top_rpm*ones(3*5), resolution = (540, round(Int, 3*5 + 3*540/(3*5+4))))
+
 
 struct Wind
     id::Int
