@@ -78,6 +78,7 @@ update_rpm!(a::FanArduino) = update_rpm!(a.sp, a.c, a.pwm, a.msg, a.rpm)
 
 get_rpm(a::FanArduino) = a.rpm
 
+get_rpms(_::Vector{IOStream}) = nothing
 function get_rpms(arduinos::Vector{FanArduino})
     @sync for a in arduinos
         @async update_rpm!(a)

@@ -3,9 +3,6 @@ using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
 
-# picamera = pyimport("picamera")
-# io =  pyimport("io")
-
 py"""
 import picamera
 import io
@@ -17,92 +14,126 @@ def PIO():
     return io.BytesIO()
 """
 
-
 const datadir = p"/home/pi/mnt/data"
 isdir(datadir) || mkpath(datadir)
 
+const nicolas = Base.Libc.gethostname() == "nicolas"
+
 # Fans
-const baudrate = 9600
-const t4 = 15000000
-const top_rpm = 12650
-const shortest_t = t4/1.1top_rpm
-const fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]
+const fan_const = nicolas ? (baudrate = 9600, t4 = 15000000, top_rpm = 12650, shortest_t = t4/1.1top_rpm, fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]) : nothing
 
 # LED 
-const strips = 2
-const ledsperstrip = 150
-const brightness = 1
-const deadleds = 9
-const cardinals = ["NE", "SW", "SE", "NW"]
-const liveleds = ledsperstrip - deadleds
-const led_port = Dict("skyroom" => "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00", "skyroom2" => "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0")
+const led_const = (strips = 2, ledsperstrip = 150, brightness = 1, deadleds = 9, cardinals = ["NE", "SW", "SE", "NW"], liveleds = ledsperstrip - deadleds, port = nicolas ? "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00" : "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0")
 
-const setupsurl = Dict("skyroom" => "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNLWhLfp_iuW68j7SM6Px8ysTmbrfmrP_7ipXK9BkfzBgfqn3Mj7ra177mZyHlY5NLA3SDtfYNTROv/pub?gid=0&single=true&output=csv", "skyroom2" => "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv")
+const setupsurl = nicolas ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNLWhLfp_iuW68j7SM6Px8ysTmbrfmrP_7ipXK9BkfzBgfqn3Mj7ra177mZyHlY5NLA3SDtfYNTROv/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
 const port = 8082
+
+rpmplt_cont = (colors = repeat(1:5, inner = [3]), x = vcat(((i - 1)*4 + 1 : 4i - 1 for i in 1:5)...), y = top_rpm*ones(3*5), resolution = (540, round(Int, 3*5 + 3*540/(3*5+4))))
 
 include("cobs.jl")
 include("abstractarduinos.jl")
 include("leds.jl")
 include("winds.jl")
 include("camera.jl")
-# include("main.jl")
 
-mutable struct SkyRoom2
-    led_arduino::LEDArduino
-    camera::PiCamera
-    frame::Observable
-    function SkyRoom2()
-        led_arduino = LEDArduino(led_port["skyroom2"])
-        camera = PiCamera(30, 67, 67, 4)
-        frame = Observable(snap(camera))
-        new(led_arduino, camera, frame)
+wind_arduinos = nicolas ? [FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)] : IOStream[]
+led_arduino = LEDArduino(led_const.port)
+camera = PiCamera(30, 67, 67, 4)
+
+const data = Observable((frame = snap(camera), trpms = get_rpms(wind_arduinos)))
+task = @async while all(isopen, wind_arduinos) && isopen(camera)
+    try
+        data[] = (; frame = snap(camera), trpms = get_rpms(wind_arduinos))
+        sleep(0.01)
+    catch e
+        @warn e
     end
 end
 
-connect!(a::SkyRoom2) = @async while isopen(a.camera)
-    a.frame[] = snap(a.camera)
-    sleep(0.01)
+function handler(session, request)
+
+    filter!(((k,s),) -> !isopen(s), app.sessions)
+    empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
+    data_copy = Observable(data[])
+    listener = on(data) do x
+        data_copy[] = x
+    end
+    on_close(session) do
+        off(data, listener)
+    end
+
+    frame = map(data_copy) do x
+        x.frame
+    end
+    trpms = map(data_copy) do x
+        x.trpms
+    end
+
+    rpmplot = plotrpm(trpms)
+    frameplot = image(frame, scale_plot = false, show_axis = false)
+    disconnect!(AbstractPlotting.camera(frameplot))
+
+    setups = get_setups()
+    buttons = button.(setups)
+
+    return DOM.div(
+        DOM.div(frameplot),
+        DOM.div(rpmplot),
+        DOM.div(buttons...)
+    )
 end
 
-function restart(a::SkyRoom2)
-    empty!(a.frame.listeners)
-    restart(a.led_arduino)
-    restart(a.camera)
-    connect!(a)
-end
-
-
-mutable struct SkyRoom1
-    wind_arduinos::Vector{FanArduino}
-    led_arduino::LEDArduino
-    camera::PiCamera
-    data::Observable
-    function SkyRoom1()
-        wind_arduinos = [FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)]
-        led_arduino = LEDArduino(led_port["skyroom"])
-        camera = PiCamera(30, 67, 67, 4)
-        data = Observable((; frame = snap(camera), trpms = get_rpms(wind_arduinos)))
-        new(wind_arduinos, led_arduino, camera, data)
+function on_close(f, session)
+    @async begin
+        # wait for session to be open
+        while !isready(session.js_fully_loaded)
+            sleep(0.5)
+        end
+        # wait for session to close
+        while isopen(session)
+            sleep(0.5)
+        end
+        # run on_close callback
+        @info("closing session!")
+        f()
     end
 end
 
-connect!(a::SkyRoom1) = @async while all(isopen, a.wind_arduinos) && isopen(a.camera)
-    a.data[] = (; frame = snap(a.camera), trpms = get_rpms(a.wind_arduinos))
-    sleep(0.01)
+function plotrpm(trpms)
+    rpms = map(trpms) do _, x
+        collect(Missings.replace(Iterators.flatten(x), NaN))
+    end
+    rpmplot = Scene(show_axis = false, resolution = rpmplt_cont.resolution)
+    barplot!(rpmplot, rpmplt_cont.x, rpmplt_cont.y, color = :white, strokecolor = :black, strokewidth = 1)
+    barplot!(rpmplot, rpmplt_cont.x, rpms, color = rpmplt_cont.colors, strokecolor = :transparent, strokewidth = 0)
+    disconnect!(AbstractPlotting.camera(rpmplot))
+    return rpmplot
 end
 
-function restart(a::SkyRoom1)
-    empty!(a.data.listeners)
-    restart.(a.wind_arduinos)
-    restart(a.led_arduino)
-    restart(a.camera)
-    connect!(a)
+function get_setups()
+    setup_file = download(setupsurl)
+    df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String))  |> TableOperations.transform(setup_label = strip) |> DataFrame
+    select(df, :setup_label => identity => :label, r"fan" => ByRow(parse2wind ∘ tuple) => :fans, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
 end
 
-function dropdown(options, option)
-    dropdown_onchange = js"update_obs($option, this.options[this.selectedIndex].text);"
-    DOM.select(DOM.option.(options); class="bandpass-dropdown", onclick=dropdown_onchange)
+function button(setup)
+    b = JSServe.Button(x.label)
+    on(b) do _
+        for a in wind_arduinos
+            a.pwm[] = setup.fans[a.id].pwm
+        end
+        led_arduino.pwm[] = parse2arduino(setup.stars)
+    end
+    return b
 end
+
+
+
+
+
+
+
+
 
 function recordfans(trpms, folder, ids)
     fan_io = open(folder / "fans.csv", "w")
@@ -110,19 +141,6 @@ function recordfans(trpms, folder, ids)
     on(trpms) do (t, rpms)
         println(fan_io, t, ",",join(Iterators.flatten(rpms), ","))
     end
-end
-
-
-
-
-# label_setup(x) = string("fans=", Int[i.pwm for i in x.fans], "; stars=", [string(i.cardinality, " ", i.elevation, " ", i.intensity, " ", i.radius) for i in x.stars])
-
-
-function update_arena!(wind_arduinos, led_arduino, setup)
-    for a in wind_arduinos
-        a.pwm[] = setup.fans[a.id].pwm
-    end
-    led_arduino.pwm[] = parse2arduino(setup.stars)
 end
 
 function backup(left2upload, bucket)

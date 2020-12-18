@@ -59,10 +59,9 @@ chmod 770 /media/yakir/rootfs/home/pi/mnt
 # echo "PARTUUID=5b8d4d0d-01 /home/pi/mnt ext4 defaults,users,nofail 0 0" | sudo tee -a /media/yakir/rootfs/etc/fstab > /dev/null
 
 # change hostname
-# HOSTNAME=sheldon
-# HOSTNAME=nicolas
-sudo sed -i 's/raspberrypi/$HOSTNAME/g' /etc/hostname 
-sudo sed -i 's/raspberrypi/$HOSTNAME/g' /etc/hosts
+sudo sed -i 's/raspberrypi/skyroom/g' /etc/hostname 
+sudo sed -i 's/raspberrypi/skyroom/g' /etc/hosts
+
 
 # add aws credentials
 cp /home/yakir/.aws -rp /media/yakir/rootfs/home/pi/
