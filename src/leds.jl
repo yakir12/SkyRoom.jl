@@ -61,7 +61,7 @@ mutable struct LEDArduino <: AbstractArduino
     function LEDArduino()
         sp = LibSerialPort.open(ledport, baudrate)
         pwm = Observable(UInt8[0, 0])
-        new(port, sp, pwm)
+        new(ledport, sp, pwm)
     end
 end
 
