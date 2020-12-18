@@ -167,10 +167,6 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
         [ismissing(x) ? 0.0 : x for x in Iterators.flatten(x)]
     end
 
-    on(trpms) do (t, rpms)
-        println(fan_io[], t, ",",join(Iterators.flatten(rpms), ","))
-    end
-
     md = Dict()
 
     setup_file = download(setupsurl["skyroom"])
@@ -285,7 +281,8 @@ end
 
 function dom_handler(sr::SkyRoom2, left2upload, session, request)
 
-    restart(sr)
+    # restart(sr)
+    empty!(sr.data.listeners)
 
     md = Dict()
     setup_file = download(setupsurl["skyroom2"])
@@ -409,6 +406,7 @@ end
 
 left2upload = Observable(0.0)
 if  Base.Libc.gethostname() == "sheldon"
+    restart(skyroom)
     skyroom2 = SkyRoom2()
     app = JSServe.Application((a, b) -> dom_handler(skyroom2, left2upload, a, b), "0.0.0.0", port);
 elseif Base.Libc.gethostname() == "nicolas"
