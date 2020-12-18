@@ -282,7 +282,7 @@ end
 function dom_handler(sr::SkyRoom2, left2upload, session, request)
 
     # restart(sr)
-    empty!(sr.data.listeners)
+    empty!(sr.frame.listeners)
 
     md = Dict()
     setup_file = download(setupsurl["skyroom2"])
@@ -406,8 +406,8 @@ end
 
 left2upload = Observable(0.0)
 if  Base.Libc.gethostname() == "sheldon"
-    restart(skyroom)
     skyroom2 = SkyRoom2()
+    restart(skyroom2)
     app = JSServe.Application((a, b) -> dom_handler(skyroom2, left2upload, a, b), "0.0.0.0", port);
 elseif Base.Libc.gethostname() == "nicolas"
     skyroom = SkyRoom1()
