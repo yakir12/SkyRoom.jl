@@ -94,7 +94,7 @@ function on_close(f, session)
 end
 
 function plotrpm(trpms)
-    rpms = map(trpms) do _, x
+    rpms = map(trpms) do (_, x)
         collect(Missings.replace(Iterators.flatten(x), NaN))
     end
     rpmplot = Scene(show_axis = false, resolution = rpmplt_cont.resolution)
