@@ -111,7 +111,7 @@ function get_setups()
 end
 
 function button(setup)
-    b = JSServe.Button(x.label)
+    b = JSServe.Button(setup.label)
     on(b) do _
         for a in wind_arduinos
             a.pwm[] = setup.fans[a.id].pwm
