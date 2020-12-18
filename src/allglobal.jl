@@ -19,15 +19,7 @@ isdir(datadir) || mkpath(datadir)
 
 const nicolas = true#Base.Libc.gethostname() == "nicolas"
 
-# Fans
-top_rpm = 12650
-const fan_const = nicolas ? (baudrate = 9600, t4 = 15000000, top_rpm = top_rpm, shortest_t = t4/1.1top_rpm, fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]) : nothing
-
-# LED 
-const led_const = (strips = 2, ledsperstrip = 150, brightness = 1, deadleds = 9, cardinals = ["NE", "SW", "SE", "NW"], liveleds = ledsperstrip - deadleds, port = nicolas ? "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00" : "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0")
-
 const setupsurl = nicolas ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNLWhLfp_iuW68j7SM6Px8ysTmbrfmrP_7ipXK9BkfzBgfqn3Mj7ra177mZyHlY5NLA3SDtfYNTROv/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
-const port = 8082
 
 rpmplt_cont = (colors = repeat(1:5, inner = [3]), x = vcat(((i - 1)*4 + 1 : 4i - 1 for i in 1:5)...), y = top_rpm*ones(3*5), resolution = (540, round(Int, 3*5 + 3*540/(3*5+4))))
 
@@ -38,7 +30,7 @@ include("winds.jl")
 include("camera.jl")
 
 wind_arduinos = nicolas ? [FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)] : IOStream[]
-led_arduino = LEDArduino(led_const.port)
+led_arduino = LEDArduino()
 camera = PiCamera(30, 67, 67, 4)
 
 const data = Observable((frame = snap(camera), trpms = get_rpms(wind_arduinos)))
@@ -128,7 +120,7 @@ function button(setup)
     return b
 end
 
-app = JSServe.Application(handler, "0.0.0.0", port);
+app = JSServe.Application(handler, "0.0.0.0", 8082);
 
 
 
