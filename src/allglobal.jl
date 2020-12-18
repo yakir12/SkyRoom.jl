@@ -68,7 +68,7 @@ function handler(session, request)
     disconnect!(AbstractPlotting.camera(frameplot))
 
     setups = get_setups()
-    buttons = button.(setups)
+    buttons = button.(eachrow(setups))
 
     return DOM.div(
         DOM.div(frameplot),
