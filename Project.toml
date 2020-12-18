@@ -25,6 +25,7 @@ WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
 
 [compat]
 Tar = "1.9"
+WGLMakie = "0.2"
 julia = "1"
 
 [extras]
