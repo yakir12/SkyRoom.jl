@@ -24,6 +24,7 @@ Tar = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
 
 [compat]
+PyCall = "1.92"
 Tar = "1.9"
 julia = "1"
 
