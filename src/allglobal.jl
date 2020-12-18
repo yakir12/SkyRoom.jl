@@ -152,7 +152,9 @@ end
 
 function dom_handler(sr::SkyRoom1, left2upload, session, request)
 
-    restart(sr)
+    # restart(sr)
+
+    empty!(sr.data.listeners)
 
     frame = map(sr.data) do x
         x.frame
@@ -411,6 +413,7 @@ if  Base.Libc.gethostname() == "sheldon"
     app = JSServe.Application((a, b) -> dom_handler(skyroom2, left2upload, a, b), "0.0.0.0", port);
 elseif Base.Libc.gethostname() == "nicolas"
     skyroom = SkyRoom1()
+    restart(skyroom)
     app = JSServe.Application((a, b) -> dom_handler(skyroom, left2upload, a, b), "0.0.0.0", port);
 else
     error("where am I")
