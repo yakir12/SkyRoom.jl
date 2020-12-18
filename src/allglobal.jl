@@ -17,7 +17,7 @@ def PIO():
 const datadir = p"/home/pi/mnt/data"
 isdir(datadir) || mkpath(datadir)
 
-const nicolas = Base.Libc.gethostname() == "nicolas"
+const nicolas = true#Base.Libc.gethostname() == "nicolas"
 
 # Fans
 const fan_const = nicolas ? (baudrate = 9600, t4 = 15000000, top_rpm = 12650, shortest_t = t4/1.1top_rpm, fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]) : nothing
@@ -127,6 +127,7 @@ function button(setup)
     return b
 end
 
+app = JSServe.Application(handler, "0.0.0.0", port);
 
 
 
@@ -134,7 +135,7 @@ end
 
 
 
-
+#=
 function recordfans(trpms, folder, ids)
     fan_io = open(folder / "fans.csv", "w")
     println(fan_io, "time,", join([join(["fan$(id)_speed$j" for j in 1:3], ",") for id in ids], ","))
@@ -433,4 +434,4 @@ elseif Base.Libc.gethostname() == "nicolas"
     app = JSServe.Application((a, b) -> dom_handler(skyroom, left2upload, a, b), "0.0.0.0", port);
 else
     error("where am I")
-end
+end=#
