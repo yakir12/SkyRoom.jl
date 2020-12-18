@@ -45,7 +45,7 @@ include("abstractarduinos.jl")
 include("leds.jl")
 include("winds.jl")
 include("camera.jl")
-include("main.jl")
+# include("main.jl")
 
 mutable struct SkyRoom2
     led_arduino::LEDArduino
