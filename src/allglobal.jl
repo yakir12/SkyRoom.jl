@@ -17,6 +17,7 @@ def PIO():
 const datadir = p"/home/pi/mnt/data"
 isdir(datadir) || mkpath(datadir)
 
+# change this back
 const nicolas = true#Base.Libc.gethostname() == "nicolas"
 
 const setupsurl = nicolas ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNLWhLfp_iuW68j7SM6Px8ysTmbrfmrP_7ipXK9BkfzBgfqn3Mj7ra177mZyHlY5NLA3SDtfYNTROv/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
@@ -26,7 +27,9 @@ rpmplt_cont = (colors = repeat(1:5, inner = [3]), x = vcat(((i - 1)*4 + 1 : 4i -
 include("cobs.jl")
 include("abstractarduinos.jl")
 include("leds.jl")
-include("winds.jl")
+if nicolas
+    include("winds.jl")
+end
 include("camera.jl")
 
 wind_arduinos = nicolas ? [FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)] : IOStream[]
