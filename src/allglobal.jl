@@ -21,7 +21,9 @@ isdir(datadir) || mkpath(datadir)
 const nicolas = true#Base.Libc.gethostname() == "nicolas"
 
 const setupsurl = nicolas ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vSDVystEejAu9O34P4GNYh8J7DZyz87GadWt-Ak3BrRMcdIO9PjWJbiWuS8MmjQr22JDNYnbtdplimv/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
-const class = "grid auto-cols-max grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
+const button_class = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+const grid_class = "grid auto-cols-max grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
+const text_class = "border py-2 px-3 text-grey-darkest"
 const bucket = nicolas ? "nicolas-cage-skyroom" : "top-floor-skyroom2"
 
 include("cobs.jl")
@@ -73,7 +75,7 @@ function get_setups()
 end
 
 function button(setup)
-    b = JSServe.Button(setup.label)
+    b = JSServe.Button(setup.label, class = button_class)
     on(b) do _
         for a in allwind.arduinos
             a.pwm[] = setup.fans[a.id].pwm
@@ -147,12 +149,12 @@ disconnect!(AbstractPlotting.camera(frameplot))
 recording = JSServe.Checkbox(false)
 on(record, recording)
 
-comment = JSServe.TextField("")
-beetleid = JSServe.TextField("")
+comment = JSServe.TextField("", class = text_class)
+beetleid = JSServe.TextField("", class = text_class)
 timestamp = Ref("")
 setuplog = []
 
-saving = JSServe.Button("Save")
+saving = JSServe.Button("Save", class = button_class)
 on(saving) do _
     if recording[] 
         recording[] = false
@@ -168,7 +170,7 @@ on(saving_now) do tf
     end
 end
 
-backingup = JSServe.Button("Backup")
+backingup = JSServe.Button("Backup", class = button_class)
 on(backup, backingup)
 left2backup = Observable(length(readdir(datadir)))
 
@@ -180,7 +182,7 @@ function handler(session, request)
     return DOM.div(JSServe.TailwindCSS,
         DOM.div(rpmplot),
         DOM.div(frameplot),
-        DOM.div(buttons..., class = class),
+        DOM.div(buttons..., class = grid_class),
         DOM.div("Record ", recording),
         DOM.div("Beetle ID ", beetleid),
         DOM.div("Comment ", comment),
