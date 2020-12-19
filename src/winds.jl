@@ -123,3 +123,4 @@ function record(allwind::AllWind, folder)
 end
 
 Base.isopen(allwind::AllWind) = all(isopen, allwind.arduinos)
+Base.close(allwind::AllWind) = close.(allwind.arduinos)
