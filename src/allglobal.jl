@@ -78,7 +78,7 @@ function button(setup)
             a.pwm[] = setup.fans[a.id].pwm
         end
         led_arduino.pwm[] = parse2arduino(setup.stars)
-        push!(md["setuplog"], now() => todict(setup))
+        push!(setuplog, now() => todict(setup))
     end
     return b
 end
