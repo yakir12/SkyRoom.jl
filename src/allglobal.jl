@@ -71,10 +71,10 @@ function handler(session, request)
     buttons = button.(eachrow(setups))
     class = "grid grid-cols-3 gap-4"
 
-    return DOM.div(
+    return DOM.div(JSServe.TailwindCSS,
         DOM.div(frameplot),
         DOM.div(rpmplot),
-        DOM.div(DOM.div.(buttons)..., class = class)
+        DOM.div(buttons..., class = class)
     )
 end
 
@@ -123,7 +123,6 @@ function button(setup)
 end
 
 app = JSServe.Application(handler, "0.0.0.0", 8082);
-
 
 
 
