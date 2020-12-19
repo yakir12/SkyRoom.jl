@@ -115,9 +115,10 @@ function save(donesave)
     end
     saving_now[] = true
     md = Dict()
+    md["timestamp"] = timestamp[]
     md["beetleid"] = beetleid[]
     md["comment"] = comment[]
-    md["setuplog"] = Dict(t => v for (t,v) in setuplog)
+    md["setuplog"] = Dict(string(t) => v for (t,v) in setuplog)
     folder = datadir / timestamp[]
     open(folder / "metadata.toml", "w") do io
         TOML.print(io, md)
