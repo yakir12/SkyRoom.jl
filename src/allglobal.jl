@@ -103,11 +103,9 @@ function record(tf)
         camera.cam.start_recording(string(folder / "video.h264"))
         record(allwind, folder)
         deleteat!(setuplog, 1:length(setuplog) - 1)
-        recording_now[] = true
     else
         camera.cam.stop_recording()
         close(allwind.io)
-        recording_now[] = false
     end
 end
 
