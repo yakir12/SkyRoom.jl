@@ -188,7 +188,7 @@ function handler(session, request)
         DOM.div("Comment ", comment),
         DOM.div(saving),
         DOM.div(backingup, left2backup, " runs left to backup"), 
-        class = grid_class
+        class = "grid grid-cols-1 gap-4"
     )
 end
 
