@@ -104,7 +104,7 @@ end
 stop_record(::Nothing) = nothing
 stop_record(allwind) = close(allwind.io)
 
-function record(tf, setuplog)
+function record(tf, timestamp, setuplog)
     if tf
         timestamp[] = string(now())
         folder = datadir / timestamp[]
@@ -194,12 +194,12 @@ function handler(session, request)
     frameplot = image(frame, scale_plot = false, show_axis = false)
     disconnect!(AbstractPlotting.camera(frameplot))
 
+    timestamp = Ref("")
     recording = JSServe.Checkbox(false)
-    on(x -> record(x, setuplog), recording)
+    on(x -> record(x, timestamp, setuplog), recording)
 
     comment = JSServe.TextField("", class = text_class)
     beetleid = JSServe.TextField("", class = text_class)
-    timestamp = Ref("")
     setuplog = []
 
     saving = JSServe.Button("Save", class = button_class)
