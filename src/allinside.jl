@@ -80,7 +80,7 @@ _fun(allwind, setup) = for a in allwind.arduinos
     a.pwm[] = setup.fans[a.id].pwm
 end
 
-function button(setup)
+function button(setup, setuplog)
     b = JSServe.Button(setup.label, class = button_class)
     on(b) do _
         _fun(allwind, setup)
@@ -104,7 +104,7 @@ end
 stop_record(::Nothing) = nothing
 stop_record(allwind) = close(allwind.io)
 
-function record(tf)
+function record(tf, setuplog)
     if tf
         timestamp[] = string(now())
         folder = datadir / timestamp[]
@@ -119,7 +119,7 @@ function record(tf)
     end
 end
 
-function save(donesave)
+function save(donesave, recording, saving_now, timestamp, beetleid, comment, setuplog, left2upload)
     while recording[]
         @info "waiting for the recording to end"
     end
@@ -137,7 +137,7 @@ function save(donesave)
     saving_now[] = false
 end
 
-function backup(_)
+function backup(left2backup)
     for folder in readpath(datadir)
         tmp = Tar.create(string(folder))
         rm(folder, recursive = true)
@@ -195,7 +195,7 @@ function handler(session, request)
     disconnect!(AbstractPlotting.camera(frameplot))
 
     recording = JSServe.Checkbox(false)
-    on(record, recording)
+    on(x -> record(x, setuplog), recording)
 
     comment = JSServe.TextField("", class = text_class)
     beetleid = JSServe.TextField("", class = text_class)
@@ -209,7 +209,7 @@ function handler(session, request)
         end
     end
     saving_now = Observable(false)
-    on(save, saving)
+    on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2upload), saving)
 
     on(saving_now) do tf
         if !tf
@@ -219,12 +219,12 @@ function handler(session, request)
     end
 
     backingup = JSServe.Button("Backup", class = button_class)
-    on(backup, backingup)
     left2backup = Observable(length(readdir(datadir)))
+    on(_ -> backup(left2backup), backingup)
 
 
     setups = get_setups()
-    buttons = button.(eachrow(setups))
+    buttons = button.(eachrow(setups), Ref(setuplog))
 
     print_sizes()
 
