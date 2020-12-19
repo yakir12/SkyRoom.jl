@@ -47,7 +47,7 @@ const data = Observable((frame = snap(camera), trpms = get_rpms(allwind)))
 task = @async while isopen(allwind) && isopen(camera)
     try
         data[] = (; frame = snap(camera), trpms = get_rpms(allwind))
-        sleep(1)
+        sleep(0.01)
     catch e
         @warn exception = e
     end
