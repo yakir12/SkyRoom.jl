@@ -96,13 +96,13 @@ end
 
 function record(tf)
     if tf
-        md["timestamp"] = string(now())
-        folder = datadir / md["timestamp"]
+        timestamp[] = string(now())
+        folder = datadir / timestamp[]
         mkdir(folder)
         camera.cam.recording && camera.cam.stop_recording()
         camera.cam.start_recording(string(folder / "video.h264"))
         record(allwind, folder)
-        deleteat!(md["setuplog"], 1:length(md["setuplog"]) - 1)
+        deleteat!(setuplog, 1:length(setuplog) - 1)
         recording_now[] = true
     else
         camera.cam.stop_recording()
