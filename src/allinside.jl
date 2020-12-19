@@ -83,6 +83,7 @@ end
 function button(setup, setuplog)
     b = JSServe.Button(setup.label, class = button_class)
     on(b) do _
+        @show setup, parse2arduino(setup.stars)
         _fun(allwind, setup)
         led_arduino.pwm[] = parse2arduino(setup.stars)
         push!(setuplog, now() => todict(setup))
@@ -119,7 +120,7 @@ function record(tf, timestamp, setuplog)
     end
 end
 
-function save(donesave, recording, saving_now, timestamp, beetleid, comment, setuplog, left2upload)
+function save(donesave, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup)
     while recording[]
         @info "waiting for the recording to end"
     end
@@ -209,7 +210,7 @@ function handler(session, request)
         end
     end
     saving_now = Observable(false)
-    on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2upload), saving)
+    on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup), saving)
 
     on(saving_now) do tf
         if !tf
