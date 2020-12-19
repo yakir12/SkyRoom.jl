@@ -61,8 +61,10 @@ trpms = map(data) do x
 end
 
 
-plotrpm(::Nothing) = nothing
 function plotrpm(trpms)
+    if isnothing(trpms[])
+        return nothing
+    end
     rpms = map(trpms) do (_, x)
         collect(Missings.replace(Iterators.flatten(x), NaN))
     end
