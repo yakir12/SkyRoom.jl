@@ -104,7 +104,7 @@ function get_rpms(allwind::AllWind)
     @sync for a in allwind.arduinos
         @async update_rpm!(a)
     end
-    now() => get_rpm.(arduinos)
+    now() => get_rpm.(allwind.arduinos)
 end
 
 function record(allwind::AllWind, folder)

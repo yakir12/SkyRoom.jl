@@ -110,6 +110,16 @@ function handler(session, request)
         end
     end
 
+    upload = JSServe.Button("Backup")
+    on(_ -> backup(left2upload, "nicolas-cage-skyroom"), upload)
+    left2upload_label = map(left2upload) do i
+        if i > 0
+            string(round(Int, 100i), "% left to upload...")
+        else
+            "all backed up"
+        end
+    end
+
     return DOM.div(JSServe.TailwindCSS,
         DOM.div(rpmplot),
         DOM.div(frameplot),
