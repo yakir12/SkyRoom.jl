@@ -143,7 +143,7 @@ end
 
 
 rpmplot = plotrpm(trpms)
-frameplot = image(frame, scale_plot = false, show_axis = false)
+frameplot = image(frame, scale_plot = false, show_axis = false, class = "object-contain md:object-scale-down")
 disconnect!(AbstractPlotting.camera(frameplot))
 
 recording = JSServe.Checkbox(false)
@@ -181,7 +181,7 @@ function handler(session, request)
 
     return DOM.div(JSServe.TailwindCSS,
         DOM.div(rpmplot),
-        DOM.div(frameplot, class = "object-contain md:object-scale-down"),
+        DOM.div(frameplot),
         DOM.div(buttons..., class = grid_class),
         DOM.div("Record ", recording),
         DOM.div("Beetle ID ", beetleid),
