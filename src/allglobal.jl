@@ -207,6 +207,27 @@ function handler(session, request)
     )
 end
 
+
+# app = JSServe.Application(handler, "0.0.0.0", 8082);
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+
+
 # function copy_observable(o, session)
 #     o_copy = Observable(o[])
 #     listener = on(o) do x
@@ -235,7 +256,6 @@ end
 #     end
 # end
 
-app = JSServe.Application(handler, "0.0.0.0", 8082);
 
 
 
