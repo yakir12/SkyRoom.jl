@@ -74,7 +74,7 @@ function handler(session, request)
     return DOM.div(
         DOM.div(frameplot),
         DOM.div(rpmplot),
-        DOM.div(buttons..., class = class)
+        DOM.div(DOM.div.(buttons)..., class = class)
     )
 end
 
