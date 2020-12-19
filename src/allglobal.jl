@@ -32,7 +32,7 @@ end
 include("camera.jl")
 
 const framerate = 30
-allwind = nicolas ? AllWind([FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)], framerate)  : nothing
+allwind = nicolas ? AllWind([FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)], 1)  : nothing
 led_arduino = LEDArduino()
 camera = PiCamera(framerate, 67, 67, 4)
 
@@ -42,7 +42,7 @@ task = @async while isopen(allwind) && isopen(camera)
         data[] = (; frame = snap(camera), trpms = get_rpms(allwind))
         sleep(0.01)
     catch e
-        @warn e
+        @warn exception = e
     end
 end
 const md = Dict("timestamp" => now(), "setuplog" => [], "comment" => "", "beetleid" => "")

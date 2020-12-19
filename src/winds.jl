@@ -114,9 +114,10 @@ function record(allwind::AllWind, folder)
     println(allwind.io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in allwind.arduinos], ","))
     @async while isopen(allwind.io)
         try 
+            t, rpms = get_rpms(allwind)
             println(allwind.io, t, ",",join(Iterators.flatten(rpms), ","))
         catch e
-            @warn e
+            @warn exception = e
         end
         sleep(1/allwind.framerate)
     end
