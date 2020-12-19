@@ -111,7 +111,7 @@ function record(allwind::AllWind, folder)
     !isdir(folder) && mkpath(folder)
     isopen(allwind.io) && close(allwind.io)
     allwind.io = open(folder / "fans.csv", "w")
-    println(allwind.io, "time,", join([join(["fan$(id)_speed$j" for j in 1:3], ",") for id in ids], ","))
+    println(allwind.io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in allwind.arduinos], ","))
     @async while isopen(allwind.io)
         try 
             println(allwind.io, t, ",",join(Iterators.flatten(rpms), ","))

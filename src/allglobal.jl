@@ -184,6 +184,17 @@ function button(setup)
     return b
 end
 
+typedict(x::T) where {T} = Dict(fn=>getfield(x, fn) for fn ∈ fieldnames(T))
+
+function todict(setup)
+    x = Dict(pairs(setup))
+    if haskey(x, :fans)
+        x[:fans] = typedict.(x[:fans])
+    end
+    x[:stars] = typedict.(x[:stars])
+    return x
+end
+
 function record(tf)
     if tf
         md["timestamp"] = now()
@@ -194,7 +205,7 @@ function record(tf)
         record(allwind, folder)
         delete!(md["setuplog"], 1:length(md["setuplog"]) - 1)
     else
-        sr.camera.cam.stop_recording()
+        camera.cam.stop_recording()
         close(allwind.io)
     end
 end
@@ -237,17 +248,6 @@ function backup(left2upload, bucket)
     end
 end
 
-
-typedict(x::T) where {T} = Dict(fn=>getfield(x, fn) for fn ∈ fieldnames(T))
-
-function todict(setup)
-    x = Dict(pairs(setup))
-    if haskey(x, :fans)
-        x[:fans] = typedict.(x[:fans])
-    end
-    x[:stars] = typedict.(x[:stars])
-    return x
-end
 
 
 function dom_handler(sr::SkyRoom1, left2upload, session, request)
