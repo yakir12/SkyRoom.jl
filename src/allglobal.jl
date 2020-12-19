@@ -203,7 +203,7 @@ end
 typedict(x::T) where {T} = Dict(fn=>getfield(x, fn) for fn ∈ fieldnames(T))
 
 function todict(setup)
-    x = Dict(pairs(setup))
+    x = Dict{Symbol, Any}(pairs(setup))
     if haskey(x, :fans)
         x[:fans] = typedict.(x[:fans])
     end
