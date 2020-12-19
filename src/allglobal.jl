@@ -53,82 +53,6 @@ trpms = map(data) do x
     x.trpms
 end
 
-rpmplot = plotrpm(trpms)
-frameplot = image(frame, scale_plot = false, show_axis = false)
-disconnect!(AbstractPlotting.camera(frameplot))
-
-recording = JSServe.Checkbox(false)
-on(record, recording)
-
-comment = JSServe.TextField("")
-beetleid = JSServe.TextField("")
-timestamp = Ref("")
-setuplog = []
-
-saving = JSServe.Button("Save")
-on(saving) do _
-    if recording[] 
-        recording[] = false
-    end
-end
-saving_now = Observable(false)
-on(save, saving)
-
-on(saving_now) do tf
-    if !tf
-        commenth[] = ""
-        beetleidh[] = ""
-    end
-end
-
-backingup = JSServe.Button("Backup")
-on(backup, backingup)
-left2backup = Observable(length(readdir(datadir)))
-
-function handler(session, request)
-
-    setups = get_setups()
-    buttons = button.(eachrow(setups))
-
-    return DOM.div(JSServe.TailwindCSS,
-        DOM.div(rpmplot),
-        DOM.div(frameplot),
-        DOM.div(buttons..., class = class),
-        DOM.div("Record ", recording),
-        DOM.div("Beetle ID ", beetleid),
-        DOM.div("Comment ", comment),
-        DOM.div(saving),
-        DOM.div(backingup, left2backup, " runs left to backup")
-    )
-end
-
-# function copy_observable(o, session)
-#     o_copy = Observable(o[])
-#     listener = on(o) do x
-#         o_copy[] = x
-#     end
-#     on_close(session) do
-#         off(o, listener)
-#     end
-#     return o_copy
-# end
-#
-#
-# function on_close(f, session)
-#     @async begin
-#         # wait for session to be open
-#         while !isready(session.js_fully_loaded)
-#             sleep(0.5)
-#         end
-#         # wait for session to close
-#         while isopen(session)
-#             sleep(0.5)
-#         end
-#         # run on_close callback
-#         @info("closing session!")
-#         f()
-#     end
-# end
 
 function plotrpm(trpms)
     rpms = map(trpms) do (_, x)
@@ -214,6 +138,85 @@ function backup()
         left2upload[] = length(readdir(datadir))
     end
 end
+
+
+
+rpmplot = plotrpm(trpms)
+frameplot = image(frame, scale_plot = false, show_axis = false)
+disconnect!(AbstractPlotting.camera(frameplot))
+
+recording = JSServe.Checkbox(false)
+on(record, recording)
+
+comment = JSServe.TextField("")
+beetleid = JSServe.TextField("")
+timestamp = Ref("")
+setuplog = []
+
+saving = JSServe.Button("Save")
+on(saving) do _
+    if recording[] 
+        recording[] = false
+    end
+end
+saving_now = Observable(false)
+on(save, saving)
+
+on(saving_now) do tf
+    if !tf
+        commenth[] = ""
+        beetleidh[] = ""
+    end
+end
+
+backingup = JSServe.Button("Backup")
+on(backup, backingup)
+left2backup = Observable(length(readdir(datadir)))
+
+function handler(session, request)
+
+    setups = get_setups()
+    buttons = button.(eachrow(setups))
+
+    return DOM.div(JSServe.TailwindCSS,
+        DOM.div(rpmplot),
+        DOM.div(frameplot),
+        DOM.div(buttons..., class = class),
+        DOM.div("Record ", recording),
+        DOM.div("Beetle ID ", beetleid),
+        DOM.div("Comment ", comment),
+        DOM.div(saving),
+        DOM.div(backingup, left2backup, " runs left to backup")
+    )
+end
+
+# function copy_observable(o, session)
+#     o_copy = Observable(o[])
+#     listener = on(o) do x
+#         o_copy[] = x
+#     end
+#     on_close(session) do
+#         off(o, listener)
+#     end
+#     return o_copy
+# end
+#
+#
+# function on_close(f, session)
+#     @async begin
+#         # wait for session to be open
+#         while !isready(session.js_fully_loaded)
+#             sleep(0.5)
+#         end
+#         # wait for session to close
+#         while isopen(session)
+#             sleep(0.5)
+#         end
+#         # run on_close callback
+#         @info("closing session!")
+#         f()
+#     end
+# end
 
 app = JSServe.Application(handler, "0.0.0.0", 8082);
 
