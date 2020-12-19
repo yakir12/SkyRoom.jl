@@ -22,6 +22,7 @@ const nicolas = true#Base.Libc.gethostname() == "nicolas"
 
 const setupsurl = nicolas ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vSDVystEejAu9O34P4GNYh8J7DZyz87GadWt-Ak3BrRMcdIO9PjWJbiWuS8MmjQr22JDNYnbtdplimv/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
 const class = "grid auto-cols-max grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
+const bucket = nicolas ? "nicolas-cage-skyroom" : "top-floor-skyroom2"
 
 include("cobs.jl")
 include("abstractarduinos.jl")
