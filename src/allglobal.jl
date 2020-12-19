@@ -134,7 +134,7 @@ function backup(_)
         rm(folder, recursive = true)
         name = basename(folder)
         run(`aws s3 mv $tmp s3://$bucket/$name.tar --quiet`)
-        left2upload[] = length(readdir(datadir))
+        left2backup[] = length(readdir(datadir))
     end
 end
 
