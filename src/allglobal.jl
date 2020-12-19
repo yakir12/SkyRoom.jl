@@ -69,7 +69,7 @@ function handler(session, request)
 
     setups = get_setups()
     buttons = button.(eachrow(setups))
-    class = "grid auto-cols-max grid-cols-3 gap-4"
+    class = "grid grid-cols-3 gap-4"
 
     return DOM.div(
         DOM.div(frameplot),
