@@ -45,131 +45,90 @@ task = @async while isopen(allwind) && isopen(camera)
         @warn exception = e
     end
 end
-const md = Dict("timestamp" => now(), "setuplog" => [], "comment" => "", "beetleid" => "")
-const save_done = Observable(true)
-const upload_ind = Observable(length(readdir(datadir)))
+
+frame = map(data) do x
+    x.frame
+end
+trpms = map(data) do x
+    x.trpms
+end
+
+rpmplot = plotrpm(trpms)
+frameplot = image(frame, scale_plot = false, show_axis = false)
+disconnect!(AbstractPlotting.camera(frameplot))
+
+recording = JSServe.Checkbox(false)
+on(record, recording)
+
+comment = JSServe.TextField("")
+beetleid = JSServe.TextField("")
+timestamp = Ref("")
+setuplog = []
+
+saving = JSServe.Button("Save")
+on(saving) do _
+    if recording[] 
+        recording[] = false
+    end
+end
+saving_now = Observable(false)
+on(save, saving)
+
+on(saving_now) do tf
+    if !tf
+        commenth[] = ""
+        beetleidh[] = ""
+    end
+end
+
+backingup = JSServe.Button("Backup")
+on(backup, backingup)
+left2backup = Observable(length(readdir(datadir)))
 
 function handler(session, request)
 
-    filter!(((k,s),) -> !isopen(s), app.sessions)
-    empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
-
-    data_copy = Observable(data[])
-    listener1 = on(data) do x
-        data_copy[] = x
-    end
-    on_close(session) do
-        off(data, listener1)
-    end
-
-    upload_ind_copy = Observable(upload_ind[])
-    listener2 = on(upload_ind) do x
-        upload_ind_copy[] = x
-    end
-    on_close(session) do
-        off(upload_ind, listener2)
-    end
-
-    save_done_copy = Observable(save_done[])
-    listener3 = on(save_done) do x
-        save_done_copy[] = x
-    end
-    on_close(session) do
-        off(save_done, listener3)
-    end
-
-    frame = map(data_copy) do x
-        x.frame
-    end
-    trpms = map(data_copy) do x
-        x.trpms
-    end
-
-    rpmplot = plotrpm(trpms)
-    frameplot = image(frame, scale_plot = false, show_axis = false)
-    disconnect!(AbstractPlotting.camera(frameplot))
-
     setups = get_setups()
     buttons = button.(eachrow(setups))
-
-    recording = JSServe.Checkbox(false)
-    on(record, recording)
-
-    commenth = JSServe.TextField(md["comment"])
-    on(commenth) do x
-        md["comment"] = x
-    end
-    beetleidh = JSServe.TextField(md["beetleid"])
-    on(beetleidh) do x
-        md["beetleid"] = x
-    end
-    on(save_done_copy) do tf
-        if tf
-            commenth[] = ""
-            beetleidh[] = ""
-        end
-    end
-
-    saveh = JSServe.Button("Save")
-    on(save, saveh)
-    on(saveh) do _
-        if recording[] 
-            recording[] = false
-        end
-    end
-
-    saving_ind = map(save_done_copy) do tf
-        if tf
-            "Done!"
-        else
-            "Saving..."
-        end
-    end
-    on(saving_ind) do txt
-        if txt == "Done!"
-            @async begin
-                sleep(3)
-                saving_ind[] = ""
-            end
-        end
-    end
-
-    upload = JSServe.Button("Backup")
-    upload_ind_txt = map(upload_ind_copy) do i
-        if i == 0
-            "all backed up"
-        else
-            string(i, " runs left to backup")
-        end
-    end
 
     return DOM.div(JSServe.TailwindCSS,
         DOM.div(rpmplot),
         DOM.div(frameplot),
         DOM.div(buttons..., class = class),
-        DOM.div(recording),
-        DOM.div(beetleidh),
-        DOM.div(commenth),
-        DOM.div(saveh, saving_ind),
-        DOM.div(upload, upload_ind_txt)
+        DOM.div("Record ", recording),
+        DOM.div("Beetle ID ", beetleid),
+        DOM.div("Comment ", comment),
+        DOM.div(saving),
+        DOM.div(backingup, left2backup, " runs left to backup")
     )
 end
 
-function on_close(f, session)
-    @async begin
-        # wait for session to be open
-        while !isready(session.js_fully_loaded)
-            sleep(0.5)
-        end
-        # wait for session to close
-        while isopen(session)
-            sleep(0.5)
-        end
-        # run on_close callback
-        @info("closing session!")
-        f()
-    end
-end
+# function copy_observable(o, session)
+#     o_copy = Observable(o[])
+#     listener = on(o) do x
+#         o_copy[] = x
+#     end
+#     on_close(session) do
+#         off(o, listener)
+#     end
+#     return o_copy
+# end
+#
+#
+# function on_close(f, session)
+#     @async begin
+#         # wait for session to be open
+#         while !isready(session.js_fully_loaded)
+#             sleep(0.5)
+#         end
+#         # wait for session to close
+#         while isopen(session)
+#             sleep(0.5)
+#         end
+#         # run on_close callback
+#         @info("closing session!")
+#         f()
+#     end
+# end
 
 function plotrpm(trpms)
     rpms = map(trpms) do (_, x)
@@ -213,28 +172,48 @@ end
 
 function record(tf)
     if tf
-        md["timestamp"] = now()
-        folder = datadir / string(md["timestamp"])
+        md["timestamp"] = string(now())
+        folder = datadir / md["timestamp"]
         mkdir(folder)
         camera.cam.recording && camera.cam.stop_recording()
         camera.cam.start_recording(string(folder / "video.h264"))
         record(allwind, folder)
         deleteat!(md["setuplog"], 1:length(md["setuplog"]) - 1)
+        recording_now[] = true
     else
         camera.cam.stop_recording()
         close(allwind.io)
+        recording_now[] = false
     end
 end
 
 function save(donesave)
-    md["setuplog"] = Dict(t => v for (t,v) in md["setuplog"])
-    folder = datadir / string(md["timestamp"])
-    open(folder / "metadata.toml", "w") do io
-        TOML.print(io, md)
+    while recording[]
+        @info "waiting for the recording to end"
     end
-    donesave[] = true
+    if !saving_now[]
+        saving_now[] = true
+        md = Dict()
+        md["beetleid"] = beetleid[]
+        md["comment"] = comment[]
+        md["setuplog"] = Dict(t => v for (t,v) in setuplog)
+        folder = datadir / timestamp
+        open(folder / "metadata.toml", "w") do io
+            TOML.print(io, md)
+        end
+        saving_now[] = false
+    end
 end
 
+function backup()
+    for folder in readpath(datadir)
+        tmp = Tar.create(string(folder))
+        rm(folder, recursive = true)
+        name = basename(folder)
+        run(`aws s3 mv $tmp s3://$bucket/$name.tar --quiet`)
+        left2upload[] = length(readdir(datadir))
+    end
+end
 
 app = JSServe.Application(handler, "0.0.0.0", 8082);
 
@@ -245,246 +224,235 @@ app = JSServe.Application(handler, "0.0.0.0", 8082);
 
 #=
 function recordfans(trpms, folder, ids)
-    fan_io = open(folder / "fans.csv", "w")
-    println(fan_io, "time,", join([join(["fan$(id)_speed$j" for j in 1:3], ",") for id in ids], ","))
-    on(trpms) do (t, rpms)
-        println(fan_io, t, ",",join(Iterators.flatten(rpms), ","))
-    end
+fan_io = open(folder / "fans.csv", "w")
+println(fan_io, "time,", join([join(["fan$(id)_speed$j" for j in 1:3], ",") for id in ids], ","))
+on(trpms) do (t, rpms)
+println(fan_io, t, ",",join(Iterators.flatten(rpms), ","))
+end
 end
 
-function backup(left2upload, bucket)
-    left2upload[] = 1.0
-    n = length(readpath(datadir))
-    for (i, folder) in enumerate(readpath(datadir))
-        tmp = Tar.create(string(folder))
-        rm(folder, recursive = true)
-        name = basename(folder)
-        run(`aws s3 mv $tmp s3://$bucket/$name.tar --quiet`)
-        left2upload[] = (n - i)/n
-    end
-end
 
 
 
 function dom_handler(sr::SkyRoom1, left2upload, session, request)
 
-    # restart(sr)
+# restart(sr)
 
-    empty!(sr.data.listeners)
+empty!(sr.data.listeners)
 
-    frame = map(sr.data) do x
-        x.frame
-    end
-    trpms = map(sr.data) do x
-        x.trpms
-    end
+frame = map(sr.data) do x
+x.frame
+end
+trpms = map(sr.data) do x
+x.trpms
+end
 
-    rpms = map(trpms) do (_, x)
-        [ismissing(x) ? 0.0 : x for x in Iterators.flatten(x)]
-    end
+rpms = map(trpms) do (_, x)
+[ismissing(x) ? 0.0 : x for x in Iterators.flatten(x)]
+end
 
-    md = Dict()
+md = Dict()
 
-    setup_file = download(setupsurl["skyroom"])
-    df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String))  |> TableOperations.transform(setup_label = strip) |> DataFrame
+setup_file = download(setupsurl["skyroom"])
+df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String))  |> TableOperations.transform(setup_label = strip) |> DataFrame
 
-    setuplog = similar(df[1:1,:])
-    setuplog[:, :time] .= now()
-    empty!(setuplog)
+setuplog = similar(df[1:1,:])
+setuplog[:, :time] .= now()
+empty!(setuplog)
 
-    setups = select(df, :setup_label => identity => :label, r"fan" => ByRow(parse2wind ∘ tuple) => :fans, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
-    options = collect(df.setup_label)
-    option = Node(first(options))
-    setup = map(option) do o
-        i = findfirst(==(o), options)
-        push!(setuplog, merge((; time = now()), NamedTuple(df[i,:])))
-        setups[i, :]
-    end
+setups = select(df, :setup_label => identity => :label, r"fan" => ByRow(parse2wind ∘ tuple) => :fans, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
+options = collect(df.setup_label)
+option = Node(first(options))
+setup = map(option) do o
+i = findfirst(==(o), options)
+push!(setuplog, merge((; time = now()), NamedTuple(df[i,:])))
+setups[i, :]
+end
 
-    on(setup) do x
-        for _ in 1:3
-            update_arena!(sr.wind_arduinos, sr.led_arduino, x)
-            sleep(0.05)
-        end
-    end
+on(setup) do x
+for _ in 1:3
+update_arena!(sr.wind_arduinos, sr.led_arduino, x)
+sleep(0.05)
+end
+end
 
 
-    # GC.gc(true)
+# GC.gc(true)
 
-    fanrecording = Observable(recordfans(trpms, tmpdir(), [a.id for a in sr.wind_arduinos]))
-    off(trpms, fanrecording[])
+fanrecording = Observable(recordfans(trpms, tmpdir(), [a.id for a in sr.wind_arduinos]))
+off(trpms, fanrecording[])
 
-    recordingtime = Node(now())
-    timestamp = map(string, recordingtime)
-    timestamp[] = ""
-    recording = JSServe.Checkbox(false)
+recordingtime = Node(now())
+timestamp = map(string, recordingtime)
+timestamp[] = ""
+recording = JSServe.Checkbox(false)
 
-    on(recording) do tf
-        if tf
-            delete!(setuplog, 1:nrow(setuplog) - 1)
-            recordingtime[] = now()
-            folder = datadir / timestamp[]
-            mkdir(folder)
-            sr.camera.cam.start_recording(string(folder / "video.h264"))
-            fanrecording[] = recordfans(trpms, folder, [a.id for a in sr.wind_arduinos])
-        else
-            off(trpms, fanrecording[])
-            sr.camera.cam.stop_recording()
-        end
-    end
-    comment = JSServe.TextField("")
-    beetleid = JSServe.TextField("")
-    save = JSServe.Button("Save")
-    on(save) do _
-        if recording[] 
-            recording[] = false
-        end
+on(recording) do tf
+if tf
+delete!(setuplog, 1:nrow(setuplog) - 1)
+recordingtime[] = now()
+folder = datadir / timestamp[]
+mkdir(folder)
+sr.camera.cam.start_recording(string(folder / "video.h264"))
+fanrecording[] = recordfans(trpms, folder, [a.id for a in sr.wind_arduinos])
+else
+off(trpms, fanrecording[])
+sr.camera.cam.stop_recording()
+end
+end
+comment = JSServe.TextField("")
+beetleid = JSServe.TextField("")
+save = JSServe.Button("Save")
+on(save) do _
+if recording[] 
+recording[] = false
+end
 
-        md["setup"] = todict(setup[])
-        md["recording_time"] = recordingtime[]
-        md["beetle_id"] = beetleid[]
-        md["comment"] = comment[]
-        folder = datadir / timestamp[]
-        open(folder / "metadata.toml", "w") do io
-            TOML.print(io, md)
-        end
-        CSV.write(folder / "setups_log.csv", setuplog)
+md["setup"] = todict(setup[])
+md["recording_time"] = recordingtime[]
+md["beetle_id"] = beetleid[]
+md["comment"] = comment[]
+folder = datadir / timestamp[]
+open(folder / "metadata.toml", "w") do io
+TOML.print(io, md)
+end
+CSV.write(folder / "setups_log.csv", setuplog)
 
-        timestamp[] = ""
-        comment[] = ""
-        beetleid[] = ""
-    end
-    upload = JSServe.Button("Backup")
-    on(_ -> backup(left2upload, "nicolas-cage-skyroom"), upload)
-    left2upload_label = map(left2upload) do i
-        if i > 0
-            string(round(Int, 100i), "% left to upload...")
-        else
-            "all backed up"
-        end
-    end
+timestamp[] = ""
+comment[] = ""
+beetleid[] = ""
+end
+upload = JSServe.Button("Backup")
+on(_ -> backup(left2upload, "nicolas-cage-skyroom"), upload)
+left2upload_label = map(left2upload) do i
+if i > 0
+string(round(Int, 100i), "% left to upload...")
+else
+"all backed up"
+end
+end
 
-    # GC.gc(true)
+# GC.gc(true)
 
-    colors = repeat(1:5, inner = [3])
-    rpmx = vcat(((i - 1)*4 + 1 : 4i - 1 for i in 1:5)...)
-    rpmplot = Scene(show_axis = false, resolution = (540, round(Int, 3*5 + 3*540/(3*5+4))))
-    barplot!(rpmplot, rpmx, top_rpm*ones(3*5), color = :white, strokecolor = :black, strokewidth = 1)
-    barplot!(rpmplot, rpmx, rpms, color = colors, strokecolor = :transparent, strokewidth = 0)
-    disconnect!(AbstractPlotting.camera(rpmplot))
+colors = repeat(1:5, inner = [3])
+rpmx = vcat(((i - 1)*4 + 1 : 4i - 1 for i in 1:5)...)
+rpmplot = Scene(show_axis = false, resolution = (540, round(Int, 3*5 + 3*540/(3*5+4))))
+barplot!(rpmplot, rpmx, top_rpm*ones(3*5), color = :white, strokecolor = :black, strokewidth = 1)
+barplot!(rpmplot, rpmx, rpms, color = colors, strokecolor = :transparent, strokewidth = 0)
+disconnect!(AbstractPlotting.camera(rpmplot))
 
-    frameplot = image(frame, scale_plot = false, show_axis = false)
-    disconnect!(AbstractPlotting.camera(frameplot))
+frameplot = image(frame, scale_plot = false, show_axis = false)
+disconnect!(AbstractPlotting.camera(frameplot))
 
-    # GC.gc(true)
+# GC.gc(true)
 
-    # print_sizes()
+# print_sizes()
 
-    empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
+empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
 
-    return DOM.div(
-        DOM.div(rpmplot),
-        DOM.div(frameplot),
-        DOM.div("Setup: ", dropdown(options, option)),
-        DOM.div("Recording: ", recording, timestamp),
-        DOM.div("ID: ", beetleid),
-        DOM.div("Comment: ", comment),
-        DOM.div(save),
-        DOM.div(upload, left2upload_label)
-    )
+return DOM.div(
+DOM.div(rpmplot),
+DOM.div(frameplot),
+DOM.div("Setup: ", dropdown(options, option)),
+DOM.div("Recording: ", recording, timestamp),
+DOM.div("ID: ", beetleid),
+DOM.div("Comment: ", comment),
+DOM.div(save),
+DOM.div(upload, left2upload_label)
+)
 
 end
 
 function dom_handler(sr::SkyRoom2, left2upload, session, request)
 
-    # restart(sr)
-    empty!(sr.frame.listeners)
+# restart(sr)
+empty!(sr.frame.listeners)
 
-    md = Dict()
-    setup_file = download(setupsurl["skyroom2"])
-    df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String))  |> TableOperations.transform(setup_label = strip) |> DataFrame
-    setups = select(df, :setup_label => identity => :label, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
-    options = collect(df.setup_label)
-    option = Node(first(options))
-    setup = map(option) do o
-        i = findfirst(==(o), options)
-        setups[i, :]
-    end
+md = Dict()
+setup_file = download(setupsurl["skyroom2"])
+df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String))  |> TableOperations.transform(setup_label = strip) |> DataFrame
+setups = select(df, :setup_label => identity => :label, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
+options = collect(df.setup_label)
+option = Node(first(options))
+setup = map(option) do o
+i = findfirst(==(o), options)
+setups[i, :]
+end
 
-    on(setup) do x
-        for _ in 1:3
-            sr.led_arduino.pwm[] = parse2arduino(x.stars)
-            sleep(0.05)
-        end
-    end
+on(setup) do x
+for _ in 1:3
+sr.led_arduino.pwm[] = parse2arduino(x.stars)
+sleep(0.05)
+end
+end
 
-    # GC.gc(true)
+# GC.gc(true)
 
-    recordingtime = Node(now())
-    timestamp = map(string, recordingtime)
-    timestamp[] = ""
-    recording = JSServe.Checkbox(false)
-    on(recording) do tf
-        if tf
-            recordingtime[] = now()
-            folder = datadir / timestamp[]
-            mkdir(folder)
-            sr.camera.cam.start_recording(string(folder / "video.h264"))
-        else
-            sr.camera.cam.stop_recording()
-        end
-    end
-    comment = JSServe.TextField("")
-    beetleid = JSServe.TextField("")
-    save = JSServe.Button("Save")
-    on(save) do _
-        if recording[] 
-            recording[] = false
-        end
+recordingtime = Node(now())
+timestamp = map(string, recordingtime)
+timestamp[] = ""
+recording = JSServe.Checkbox(false)
+on(recording) do tf
+if tf
+recordingtime[] = now()
+folder = datadir / timestamp[]
+mkdir(folder)
+sr.camera.cam.start_recording(string(folder / "video.h264"))
+else
+sr.camera.cam.stop_recording()
+end
+end
+comment = JSServe.TextField("")
+beetleid = JSServe.TextField("")
+save = JSServe.Button("Save")
+on(save) do _
+if recording[] 
+recording[] = false
+end
 
-        md["setup"] = todict(setup[])
-        md["recording_time"] = recordingtime[]
-        md["beetle_id"] = beetleid[]
-        md["comment"] = comment[]
-        folder = datadir / timestamp[]
-        open(folder / "metadata.toml", "w") do io
-            TOML.print(io, md)
-        end
+md["setup"] = todict(setup[])
+md["recording_time"] = recordingtime[]
+md["beetle_id"] = beetleid[]
+md["comment"] = comment[]
+folder = datadir / timestamp[]
+open(folder / "metadata.toml", "w") do io
+TOML.print(io, md)
+end
 
-        timestamp[] = ""
-        comment[] = ""
-        beetleid[] = ""
-    end
-    upload = JSServe.Button("Backup")
-    on(_ -> backup(left2upload, "top-floor-skyroom2"), upload)
-    left2upload_label = map(left2upload) do i
-        if i > 0
-            string(round(Int, 100i), "% left to upload...")
-        else
-            "all backed up"
-        end
-    end
+timestamp[] = ""
+comment[] = ""
+beetleid[] = ""
+end
+upload = JSServe.Button("Backup")
+on(_ -> backup(left2upload, "top-floor-skyroom2"), upload)
+left2upload_label = map(left2upload) do i
+if i > 0
+string(round(Int, 100i), "% left to upload...")
+else
+"all backed up"
+end
+end
 
-    # GC.gc(true)
+# GC.gc(true)
 
-    frameplot = image(sr.frame, scale_plot = false, show_axis = false)
-    disconnect!(AbstractPlotting.camera(frameplot))
+frameplot = image(sr.frame, scale_plot = false, show_axis = false)
+disconnect!(AbstractPlotting.camera(frameplot))
 
-    # GC.gc(true)
+# GC.gc(true)
 
-    # print_sizes()
+# print_sizes()
 
-    empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
+empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
 
-    return DOM.div(
-        DOM.div(frameplot),
-        DOM.div("Setup: ", dropdown(options, option)),
-        DOM.div("Recording: ", recording, timestamp),
-        DOM.div("ID: ", beetleid),
-        DOM.div("Comment: ", comment),
-        DOM.div(save),
-        DOM.div(upload, left2upload_label)
-    )
+return DOM.div(
+DOM.div(frameplot),
+DOM.div("Setup: ", dropdown(options, option)),
+DOM.div("Recording: ", recording, timestamp),
+DOM.div("ID: ", beetleid),
+DOM.div("Comment: ", comment),
+DOM.div(save),
+DOM.div(upload, left2upload_label)
+)
 end
 
 # function print_sizes()
@@ -522,13 +490,13 @@ end
 
 left2upload = Observable(0.0)
 if  Base.Libc.gethostname() == "sheldon"
-    skyroom2 = SkyRoom2()
-    restart(skyroom2)
-    app = JSServe.Application((a, b) -> dom_handler(skyroom2, left2upload, a, b), "0.0.0.0", port);
+skyroom2 = SkyRoom2()
+restart(skyroom2)
+app = JSServe.Application((a, b) -> dom_handler(skyroom2, left2upload, a, b), "0.0.0.0", port);
 elseif Base.Libc.gethostname() == "nicolas"
-    skyroom = SkyRoom1()
-    restart(skyroom)
-    app = JSServe.Application((a, b) -> dom_handler(skyroom, left2upload, a, b), "0.0.0.0", port);
+skyroom = SkyRoom1()
+restart(skyroom)
+app = JSServe.Application((a, b) -> dom_handler(skyroom, left2upload, a, b), "0.0.0.0", port);
 else
-    error("where am I")
+error("where am I")
 end=#
