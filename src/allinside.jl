@@ -226,7 +226,7 @@ function handler(session, request)
     setups = get_setups()
     buttons = button.(eachrow(setups), Ref(setuplog))
 
-    print_sizes()
+    # print_sizes()
 
     return DOM.div(JSServe.TailwindCSS,
         DOM.div(rpmplot),
