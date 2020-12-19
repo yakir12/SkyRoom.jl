@@ -170,7 +170,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
     md = Dict()
 
     setup_file = download(setupsurl["skyroom"])
-    df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String))  |> TableOperations.transform(setup_label = strip) |> DataFrame
+    df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String))  |> TableOperations.transform(setup_label = x -> ismissing(x) ? string("empty", rand(1:100)) : strip(x)) |> DataFrame
 
     setuplog = similar(df[1:1,:])
     setuplog[:, :time] .= now()
