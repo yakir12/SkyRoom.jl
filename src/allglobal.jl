@@ -75,6 +75,8 @@ function plotrpm(trpms)
     return rpmplot
 end
 
+parse2wind(windrow) = [Wind(id, v) for (id, v) in enumerate(windrow)]
+
 function get_setups()
     setup_file = download(setupsurl)
     df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String)) |> TableOperations.filter(x -> !ismissing(Tables.getcolumn(x, :setup_label))) |> TableOperations.transform(setup_label = strip) |> DataFrame

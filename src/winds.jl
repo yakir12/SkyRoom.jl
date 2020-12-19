@@ -13,7 +13,6 @@ struct Wind
 end
 Wind(id::Int, ::Missing) = Wind(id, 0x00)
 
-parse2wind(windrow) = [Wind(id, v) for (id, v) in enumerate(windrow)]
 
 tosecond(t::T) where {T <: TimePeriod}= t/convert(T, Second(1))
 t₀ = now()
