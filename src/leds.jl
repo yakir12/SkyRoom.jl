@@ -4,9 +4,8 @@ const brightness = 1
 const deadleds = 9
 const cardinals = ["NE", "SW", "SE", "NW"]
 const liveleds = ledsperstrip - deadleds
-# change that back
-# const ledport = nicolas ? "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00" : "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"
-const ledport = "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351317061-if00"
+const ledport = nicolas ? "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00" : "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"
+# const ledport = "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351317061-if00"
 
 struct Star
     cardinality::String

@@ -1,10 +1,8 @@
 const top_rpm = 12650
 const t4 = 15000000
-const baudrate = 9600
 const shortest_t = t4/1.1top_rpm
-# change back
-# const fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]
-const fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351F0F0F0-if00"]
+const fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]
+# const fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351F0F0F0-if00"]
 nports = length(fan_ports)
 const rpmplt_cont = (colors = repeat(1:nports, inner = [3]), x = vcat(((i - 1)*(nports - 1) + 1 : (i - 1)*(nports - 1) + 3 for i in 1:nports)...), y = top_rpm*ones(3nports), resolution = (540, round(Int, 3nports + 3*540/(3nports+4))))
 
