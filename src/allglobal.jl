@@ -21,7 +21,7 @@ isdir(datadir) || mkpath(datadir)
 const nicolas = true#Base.Libc.gethostname() == "nicolas"
 
 const setupsurl = nicolas ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vSDVystEejAu9O34P4GNYh8J7DZyz87GadWt-Ak3BrRMcdIO9PjWJbiWuS8MmjQr22JDNYnbtdplimv/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
-const button_class = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-24"
+const button_class = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
 const grid_class = "grid auto-cols-max grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
 const text_class = "border py-2 px-3 text-grey-darkest"
 const bucket = nicolas ? "nicolas-cage-skyroom" : "top-floor-skyroom2"
@@ -181,7 +181,7 @@ function handler(session, request)
 
     return DOM.div(JSServe.TailwindCSS,
         DOM.div(rpmplot),
-        DOM.div(frameplot),
+        DOM.div(frameplot, class = "object-contain md:object-scale-down"),
         DOM.div(buttons..., class = grid_class),
         DOM.div("Record ", recording),
         DOM.div("Beetle ID ", beetleid),
