@@ -89,11 +89,37 @@ update_rpm!(a::FanArduino) = update_rpm!(a.sp, a.c, a.pwm, a.msg, a.rpm)
 
 get_rpm(a::FanArduino) = a.rpm
 
-get_rpms(_::Vector{IOStream}) = nothing
-function get_rpms(arduinos::Vector{FanArduino})
-    @sync for a in arduinos
+mutable struct AllWind
+    arduinos::Vector{FanArduino}
+    io::IOStream
+    framerate::Int
+    function AllWind(arduinos::Vector{FanArduino}, framerate::Int)
+        io = open(tempname(), "w")
+        close(io)
+        new(arduinos, io, framerate)
+    end
+end
+
+function get_rpms(allwind::AllWind)
+    @sync for a in allwind.arduinos
         @async update_rpm!(a)
     end
     now() => get_rpm.(arduinos)
 end
 
+function record(allwind::AllWind, folder)
+    !isdir(folder) && mkpath(folder)
+    isopen(allwind.io) && close(allwind.io)
+    allwind.io = open(folder / "fans.csv", "w")
+    println(allwind.io, "time,", join([join(["fan$(id)_speed$j" for j in 1:3], ",") for id in ids], ","))
+    @async while isopen(allwind.io)
+        try 
+            println(allwind.io, t, ",",join(Iterators.flatten(rpms), ","))
+        catch e
+            @warn e
+        end
+        sleep(1/allwind.framerate)
+    end
+end
+
+Base.isopen(allwind::AllWind) = all(isopen, allwind.arduinos)

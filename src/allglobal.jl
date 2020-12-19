@@ -21,6 +21,7 @@ isdir(datadir) || mkpath(datadir)
 const nicolas = true#Base.Libc.gethostname() == "nicolas"
 
 const setupsurl = nicolas ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vSDVystEejAu9O34P4GNYh8J7DZyz87GadWt-Ak3BrRMcdIO9PjWJbiWuS8MmjQr22JDNYnbtdplimv/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
+const class = "grid auto-cols-max grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
 
 include("cobs.jl")
 include("abstractarduinos.jl")
@@ -30,19 +31,21 @@ if nicolas
 end
 include("camera.jl")
 
-wind_arduinos = nicolas ? [FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)] : IOStream[]
+const framerate = 30
+allwind = nicolas ? AllWind([FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)], framerate)  : nothing
 led_arduino = LEDArduino()
-camera = PiCamera(30, 67, 67, 4)
+camera = PiCamera(framerate, 67, 67, 4)
 
-const data = Observable((frame = snap(camera), trpms = get_rpms(wind_arduinos)))
-task = @async while all(isopen, wind_arduinos) && isopen(camera)
+const data = Observable((frame = snap(camera), trpms = get_rpms(allwind)))
+task = @async while isopen(allwind) && isopen(camera)
     try
-        data[] = (; frame = snap(camera), trpms = get_rpms(wind_arduinos))
+        data[] = (; frame = snap(camera), trpms = get_rpms(allwind))
         sleep(0.01)
     catch e
         @warn e
     end
 end
+const md = Dict("timestamp" => now(), "setuplog" => [], "comment" => "", "beetleid" => "")
 
 function handler(session, request)
 
@@ -69,12 +72,52 @@ function handler(session, request)
 
     setups = get_setups()
     buttons = button.(eachrow(setups))
-    class = "grid auto-cols-max grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
+
+    recording = JSServe.Checkbox(false)
+    on(record, recording)
+
+    commenth = JSServe.TextField("")
+    on(commenth) do x
+        md["comment"] = x
+    end
+    beetleidh = JSServe.TextField("")
+    on(beetleidh) do x
+        md["beetleid"] = x
+    end
+    donesave = Observable(nothing)
+    on(donesave) do _
+        comment[] = ""
+        beetleid[] = ""
+    end
+
+    saveh = JSServe.Button("Save")
+    on(x -> save(donesave), saveh)
+    on(saveh) do _
+        if recording[] 
+            recording[] = false
+        end
+    end
+
+    saving_ind = Observable("")
+    on(saveh) do _
+        saving_ind[] = "Saving..."
+    end
+    on(donesave) do _
+        saving_ind[] = "Done!"
+        @async begin
+            sleep(3)
+            saving_ind[] = ""
+        end
+    end
 
     return DOM.div(JSServe.TailwindCSS,
-        DOM.div(frameplot),
         DOM.div(rpmplot),
-        DOM.div(buttons..., class = class)
+        DOM.div(frameplot),
+        DOM.div(buttons..., class = class),
+        DOM.div(recording),
+        DOM.div(beetleidh),
+        DOM.div(commenth),
+        DOM.div(saveh, saving_ind),
     )
 end
 
@@ -114,13 +157,39 @@ end
 function button(setup)
     b = JSServe.Button(setup.label)
     on(b) do _
-        for a in wind_arduinos
+        for a in allwind.arduinos
             a.pwm[] = setup.fans[a.id].pwm
         end
         led_arduino.pwm[] = parse2arduino(setup.stars)
+        push!(md["setuplog"], now() => todict(setup))
     end
     return b
 end
+
+function record(tf)
+    if tf
+        md["timestamp"] = now()
+        folder = datadir / string(md["timestamp"])
+        mkdir(folder)
+        camera.cam.recording && camera.cam.stop_recording()
+        camera.cam.start_recording(string(folder / "video.h264"))
+        record(allwind, folder)
+        delete!(md["setuplog"], 1:length(md["setuplog"]) - 1)
+    else
+        sr.camera.cam.stop_recording()
+        close(allwind.io)
+    end
+end
+
+function save(donesave)
+    md["setuplog"] = Dict(t => v for (t,v) in md["setuplog"])
+    folder = datadir / string(md["timestamp"])
+    open(folder / "metadata.toml", "w") do io
+        TOML.print(io, md)
+    end
+    donesave[] = nothing
+end
+
 
 app = JSServe.Application(handler, "0.0.0.0", 8082);
 
