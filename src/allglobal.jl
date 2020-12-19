@@ -187,7 +187,8 @@ function handler(session, request)
         DOM.div("Beetle ID ", beetleid),
         DOM.div("Comment ", comment),
         DOM.div(saving),
-        DOM.div(backingup, left2backup, " runs left to backup")
+        DOM.div(backingup, left2backup, " runs left to backup"), 
+        class = grid_class
     )
 end
 
