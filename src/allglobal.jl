@@ -46,25 +46,36 @@ task = @async while isopen(allwind) && isopen(camera)
     end
 end
 const md = Dict("timestamp" => now(), "setuplog" => [], "comment" => "", "beetleid" => "")
+const save_done = Observable(true)
 const upload_ind = Observable(length(readdir(datadir)))
 
 function handler(session, request)
 
     filter!(((k,s),) -> !isopen(s), app.sessions)
     empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
+
     data_copy = Observable(data[])
-    listener = on(data) do x
+    listener1 = on(data) do x
         data_copy[] = x
     end
     on_close(session) do
-        off(data, listener)
+        off(data, listener1)
     end
+
     upload_ind_copy = Observable(upload_ind[])
     listener2 = on(upload_ind) do x
         upload_ind_copy[] = x
     end
     on_close(session) do
         off(upload_ind, listener2)
+    end
+
+    save_done_copy = Observable(save_done[])
+    listener3 = on(save_done) do x
+        save_done_copy[] = x
+    end
+    on_close(session) do
+        off(save_done, listener3)
     end
 
     frame = map(data_copy) do x
@@ -84,37 +95,42 @@ function handler(session, request)
     recording = JSServe.Checkbox(false)
     on(record, recording)
 
-    commenth = JSServe.TextField("")
+    commenth = JSServe.TextField(md["comment"])
     on(commenth) do x
         md["comment"] = x
     end
-    beetleidh = JSServe.TextField("")
+    beetleidh = JSServe.TextField(md["beetleid"])
     on(beetleidh) do x
         md["beetleid"] = x
     end
-    donesave = Observable(nothing)
-    on(donesave) do _
-        comment[] = ""
-        beetleid[] = ""
+    on(save_done_copy) do tf
+        if tf
+            commenth[] = ""
+            beetleidh[] = ""
+        end
     end
 
     saveh = JSServe.Button("Save")
-    on(x -> save(donesave), saveh)
+    on(save, saveh)
     on(saveh) do _
         if recording[] 
             recording[] = false
         end
     end
 
-    saving_ind = Observable("")
-    on(saveh) do _
-        saving_ind[] = "Saving..."
+    saving_ind = map(save_done_copy) do tf
+        if tf
+            "Done!"
+        else
+            "Saving..."
+        end
     end
-    on(donesave) do _
-        saving_ind[] = "Done!"
-        @async begin
-            sleep(3)
-            saving_ind[] = ""
+    on(saving_ind) do txt
+        if txt == "Done!"
+            @async begin
+                sleep(3)
+                saving_ind[] = ""
+            end
         end
     end
 
@@ -216,7 +232,7 @@ function save(donesave)
     open(folder / "metadata.toml", "w") do io
         TOML.print(io, md)
     end
-    donesave[] = nothing
+    donesave[] = true
 end
 
 
