@@ -46,6 +46,7 @@ task = @async while isopen(allwind) && isopen(camera)
     end
 end
 const md = Dict("timestamp" => now(), "setuplog" => [], "comment" => "", "beetleid" => "")
+const upload_ind = Observable(length(readdir(datadir)))
 
 function handler(session, request)
 
@@ -57,6 +58,13 @@ function handler(session, request)
     end
     on_close(session) do
         off(data, listener)
+    end
+    upload_ind_copy = Observable(upload_ind[])
+    listener2 = on(upload_ind) do x
+        upload_ind_copy[] = x
+    end
+    on_close(session) do
+        off(upload_ind, listener2)
     end
 
     frame = map(data_copy) do x
@@ -111,12 +119,11 @@ function handler(session, request)
     end
 
     upload = JSServe.Button("Backup")
-    on(_ -> backup(left2upload, "nicolas-cage-skyroom"), upload)
-    left2upload_label = map(left2upload) do i
-        if i > 0
-            string(round(Int, 100i), "% left to upload...")
-        else
+    upload_ind_txt = map(upload_ind_copy) do i
+        if i == 0
             "all backed up"
+        else
+            string(i, " runs left to backup")
         end
     end
 
@@ -128,6 +135,7 @@ function handler(session, request)
         DOM.div(beetleidh),
         DOM.div(commenth),
         DOM.div(saveh, saving_ind),
+        DOM.div(upload, upload_ind_txt)
     )
 end
 
