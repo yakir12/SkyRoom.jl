@@ -162,8 +162,8 @@ on(save, saving)
 
 on(saving_now) do tf
     if !tf
-        commenth[] = ""
-        beetleidh[] = ""
+        comment[] = ""
+        beetleid[] = ""
     end
 end
 
