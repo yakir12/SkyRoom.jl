@@ -113,18 +113,16 @@ function save(donesave)
     while recording[]
         @info "waiting for the recording to end"
     end
-    if !saving_now[]
-        saving_now[] = true
-        md = Dict()
-        md["beetleid"] = beetleid[]
-        md["comment"] = comment[]
-        md["setuplog"] = Dict(t => v for (t,v) in setuplog)
-        folder = datadir / timestamp
-        open(folder / "metadata.toml", "w") do io
-            TOML.print(io, md)
-        end
-        saving_now[] = false
+    saving_now[] = true
+    md = Dict()
+    md["beetleid"] = beetleid[]
+    md["comment"] = comment[]
+    md["setuplog"] = Dict(t => v for (t,v) in setuplog)
+    folder = datadir / timestamp
+    open(folder / "metadata.toml", "w") do io
+        TOML.print(io, md)
     end
+    saving_now[] = false
 end
 
 function backup()
