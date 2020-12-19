@@ -127,7 +127,7 @@ function save(donesave)
     saving_now[] = false
 end
 
-function backup()
+function backup(_)
     for folder in readpath(datadir)
         tmp = Tar.create(string(folder))
         rm(folder, recursive = true)
