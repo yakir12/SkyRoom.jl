@@ -18,9 +18,9 @@ const datadir = p"/home/pi/mnt/data"
 isdir(datadir) || mkpath(datadir)
 
 # change this back
-const nicolas = true#Base.Libc.gethostname() == "nicolas"
-
-const setupsurl = nicolas ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vSDVystEejAu9O34P4GNYh8J7DZyz87GadWt-Ak3BrRMcdIO9PjWJbiWuS8MmjQr22JDNYnbtdplimv/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
+const nicolas = Base.Libc.gethostname() == "nicolas"
+# "https://docs.google.com/spreadsheets/d/e/2PACX-1vSDVystEejAu9O34P4GNYh8J7DZyz87GadWt-Ak3BrRMcdIO9PjWJbiWuS8MmjQr22JDNYnbtdplimv/pub?gid=0&single=true&output=csv"
+const setupsurl = nicolas ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
 const button_class = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
 const grid_class = "grid auto-cols-max grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
 const text_class = "border py-2 px-3 text-grey-darkest"
@@ -74,12 +74,15 @@ function get_setups()
     select(df, :setup_label => identity => :label, r"fan" => ByRow(parse2wind ∘ tuple) => :fans, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
 end
 
+_fun(::Nothing, _) = nothing
+_fun(allwind, setup) = for a in allwind.arduinos
+    a.pwm[] = setup.fans[a.id].pwm
+end
+
 function button(setup)
     b = JSServe.Button(setup.label, class = button_class)
     on(b) do _
-        for a in allwind.arduinos
-            a.pwm[] = setup.fans[a.id].pwm
-        end
+        _fun(allwind, setup)
         led_arduino.pwm[] = parse2arduino(setup.stars)
         push!(setuplog, now() => todict(setup))
     end
@@ -97,6 +100,9 @@ function todict(setup)
     return x
 end
 
+stop_record(::Nothing) = nothing
+stop_record(allwind) = close(allwind.io)
+
 function record(tf)
     if tf
         timestamp[] = string(now())
@@ -108,7 +114,7 @@ function record(tf)
         deleteat!(setuplog, 1:length(setuplog) - 1)
     else
         camera.cam.stop_recording()
-        close(allwind.io)
+        stop_record(allwind)
     end
 end
 
@@ -143,7 +149,7 @@ end
 
 
 rpmplot = plotrpm(trpms)
-frameplot = image(frame, scale_plot = false, show_axis = false, class = "object-contain md:object-scale-down")
+frameplot = image(frame, scale_plot = false, show_axis = false)
 disconnect!(AbstractPlotting.camera(frameplot))
 
 recording = JSServe.Checkbox(false)
