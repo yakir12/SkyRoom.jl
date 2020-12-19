@@ -98,7 +98,6 @@ mutable struct AllWind
     end
 end
 
-get_rpms(::Nothing) = nothing
 function get_rpms(allwind::AllWind)
     @sync for a in allwind.arduinos
         @async update_rpm!(a)
@@ -106,7 +105,6 @@ function get_rpms(allwind::AllWind)
     now() => get_rpm.(allwind.arduinos)
 end
 
-record(::Nothing, _) = nothing
 function record(allwind::AllWind, folder)
     !isdir(folder) && mkpath(folder)
     isopen(allwind.io) && close(allwind.io)
@@ -123,7 +121,5 @@ function record(allwind::AllWind, folder)
     end
 end
 
-Base.isopen(::Nothing) = true
 Base.isopen(allwind::AllWind) = all(isopen, allwind.arduinos)
-Base.close(::Nothing) = nothing
 Base.close(allwind::AllWind) = close.(allwind.arduinos)

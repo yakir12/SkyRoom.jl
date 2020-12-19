@@ -32,6 +32,10 @@ include("leds.jl")
 if nicolas
     include("winds.jl")
 end
+get_rpms(::Nothing) = nothing
+record(::Nothing, _) = nothing
+Base.isopen(::Nothing) = true
+Base.close(::Nothing) = nothing
 include("camera.jl")
 
 const framerate = 30
