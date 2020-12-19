@@ -191,6 +191,9 @@ left2backup = Observable(length(readdir(datadir)))
 
 function handler(session, request)
 
+    filter!(((k,s),) -> !isopen(s), app.sessions)
+    empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
+
     setups = get_setups()
     buttons = button.(eachrow(setups))
 
@@ -206,6 +209,33 @@ function handler(session, request)
         class = "grid grid-cols-1 gap-4"
     )
 end
+
+
+
+function print_sizes()
+    mem = Pair{String, Int}[]
+    for m in values(Base.loaded_modules), vs in names(m, all = true)
+        if isdefined(m, vs)
+            v = getfield(m, vs)
+            x = Base.summarysize(v)
+            if x > 10^6
+                push!(mem, string(m, "; ", vs, ": ") => x) 
+            end
+        end
+    end
+    sort!(mem, by = last, rev = true)
+    n = length(mem)
+    if n > 15
+        deleteat!(mem, 16:n)
+    end
+    println("Memory usage:")
+    for (txt, i) in mem
+        println(txt, Base.format_bytes(i))
+    end
+    println("")
+end
+
+
 
 
 # app = JSServe.Application(handler, "0.0.0.0", 8082);
