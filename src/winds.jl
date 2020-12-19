@@ -72,14 +72,13 @@ mutable struct FanArduino <: AbstractArduino
         c = ReentrantLock()
         sp = LibSerialPort.open(port, baudrate)
         pwm = Observable(0x00)
+        on(pwm) do x
+            set_pwm!(sp, c, x)
+        end
         msg = Vector{UInt8}(undef, 12)
         rpm = Vector{Float64}(undef, 3)
         new(id, c, port, sp, msg, rpm, pwm)
     end
-end
-
-connect!(a::FanArduino) = on(a.pwm) do x
-    set_pwm!(a.sp, a.c, x)
 end
 
 update_rpm!(a::FanArduino) = update_rpm!(a.sp, a.c, a.pwm, a.msg, a.rpm)

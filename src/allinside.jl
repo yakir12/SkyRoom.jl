@@ -81,9 +81,8 @@ _fun(allwind, setup) = for a in allwind.arduinos
 end
 
 function button(setup, setuplog)
-    b = JSServe.Button(setup.label, class = button_class)
+    b = JSServe.Button(string(setup.label), class = button_class)
     on(b) do _
-        @show setup, parse2arduino(setup.stars)
         _fun(allwind, setup)
         led_arduino.pwm[] = parse2arduino(setup.stars)
         push!(setuplog, now() => todict(setup))
