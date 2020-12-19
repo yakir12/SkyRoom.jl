@@ -123,6 +123,7 @@ function save(donesave)
     open(folder / "metadata.toml", "w") do io
         TOML.print(io, md)
     end
+    left2backup[] += 1
     saving_now[] = false
 end
 
