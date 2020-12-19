@@ -69,7 +69,7 @@ function handler(session, request)
 
     setups = get_setups()
     buttons = button.(eachrow(setups))
-    class = "grid auto-cols-max grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4"
+    class = "grid auto-cols-max grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
 
     return DOM.div(JSServe.TailwindCSS,
         DOM.div(frameplot),
