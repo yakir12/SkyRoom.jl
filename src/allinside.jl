@@ -1,9 +1,7 @@
-using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, PyCall, LibSerialPort, TimerOutputs, Missings
+using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, PyCall, LibSerialPort, Missings
 using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
-
-const to = TimerOutput()
 
 py"""
 import picamera
@@ -87,13 +85,13 @@ function parse2one(setup_file)
 end
 
 function parse2both(setup_file)
-    rs = @timeit to "1" NamedTuple{(:label, :fans, :stars),Tuple{String,Array{Wind,1},Array{Star,1}}}[]
+    rs = NamedTuple{(:label, :fans, :stars),Tuple{String,Array{Wind,1},Array{Star,1}}}[]
     for nt in CSV.Rows(setup_file, header = 1:2)
         if !ismissing(nt.setup_label)
-            t = @timeit to "2" Tuple(nt)
-            fans = @timeit to "3" parse2wind(t[2:6])
-            stars = @timeit to "4" parse2stars(t[7:end])
-            @timeit to "5" push!(rs, (label = t[1], fans = fans, stars = stars))
+            t = Tuple(nt)
+            fans = parse2wind(t[2:6])
+            stars = parse2stars(t[7:end])
+            push!(rs, (label = t[1], fans = fans, stars = stars))
         end
     end
     rs
