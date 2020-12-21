@@ -75,12 +75,12 @@ parse2wind(windrow) = [Wind(id, v) for (id, v) in enumerate(windrow)]
 parse2stars(starsrow) = [Star(v...) for v in Iterators.partition(starsrow, 4) if !any(ismissing, v)]
 
 function parse2one(setup_file)
-    rs = @timeit to "1" NamedTuple{(:label, :stars),Tuple{String,Array{Star,1}}}[]
+    rs = NamedTuple{(:label, :stars),Tuple{String,Array{Star,1}}}[]
     for nt in CSV.Rows(setup_file, header = 1:2)
         if !ismissing(nt.setup_label)
-            t = @timeit to "2" Tuple(nt)
-            stars = @timeit to "3" parse2stars(t[2:end])
-            @timeit to "4" push!(rs, (label = t[1], stars = stars))
+            t = Tuple(nt)
+            stars = parse2stars(t[2:end])
+            push!(rs, (label = t[1], stars = stars))
         end
     end
     rs
@@ -208,8 +208,7 @@ end
 
 
 function handler(session, request)
-    @timeit to "all" begin
-
+    a = @allocated begin
         # filter!(((k,s),) -> !isopen(s), app.sessions)
         empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
         data2 = copy_observable(data, session)
@@ -252,13 +251,12 @@ function handler(session, request)
         backingup = JSServe.Button("Backup", class = button_class)
         left2backup = Observable(length(readdir(datadir)))
         on(_ -> backup(left2backup), backingup)
-    end
+    end; a > 0 && println(Base.format_bytes(a))
 
-
-    setups = get_setups()
-    buttons = button.(setups, Ref(setuplog))
-
-    show(to)
+    @allocated begin
+        setups = get_setups()
+        buttons = button.(setups, Ref(setuplog))
+    end; a > 0 && println(Base.format_bytes(a))
 
     # print_sizes()
 
