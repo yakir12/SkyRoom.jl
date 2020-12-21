@@ -229,9 +229,6 @@ function handler(session, request)
     setups = get_setups()
     buttons = button.(eachrow(setups), Ref(setuplog))
 
-    println("reload:")
-    show(to)
-
     # print_sizes()
 
     return DOM.div(JSServe.TailwindCSS,
