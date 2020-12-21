@@ -249,8 +249,8 @@ function handler(session, request)
         end
 
         @timeit to "setup buttons" begin
-            setups = get_setups()
-            buttons = button.(eachrow(setups), Ref(setuplog))
+            setups = @timeit to "get buttons" get_setups()
+            buttons = @timeit to "build buttons" button.(eachrow(setups), Ref(setuplog))
         end
     end
 
