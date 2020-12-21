@@ -1,7 +1,16 @@
-using PyCall, Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, DataFrames, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, LibSerialPort, Observables, Tables, TableOperations
+using PyCall, Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, DataFrames, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, LibSerialPort, Observables, Tables, TableOperations, TimerOutputs
 using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
+
+const to = TimerOutput()
+
+@async while true
+    println(now())
+    show(to)
+    sleep(60*60)
+end
+
 
 py"""
 import picamera
@@ -181,52 +190,63 @@ end
 
 
 function handler(session, request)
-    filter!(((k,s),) -> !isopen(s), app.sessions)
-    empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
-    data2 = copy_observable(data, session)
-
-    frame = map(data2) do x
-        x.frame
-    end
-    trpms = map(data2) do x
-        x.trpms
+    @timeit to "clean" begin
+        filter!(((k,s),) -> !isopen(s), app.sessions)
+        empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
+        data2 = copy_observable(data, session)
     end
 
-    rpmplot = plotrpm(trpms)
-    frameplot = image(frame, scale_plot = false, show_axis = false)
-    disconnect!(AbstractPlotting.camera(frameplot))
-
-    timestamp = Ref("")
-    recording = JSServe.Checkbox(false)
-    on(x -> record(x, timestamp, setuplog), recording)
-
-    comment = JSServe.TextField("", class = text_class)
-    beetleid = JSServe.TextField("", class = text_class)
-    setuplog = []
-
-    saving = JSServe.Button("Save", class = button_class)
-    on(saving) do _
-        if recording[] 
-            recording[] = false
+    @timeit to "split to 2 obs" begin
+        frame = map(data2) do x
+            x.frame
         end
-    end
-    saving_now = Observable(false)
-    on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup), saving)
-
-    on(saving_now) do tf
-        if !tf
-            comment[] = ""
-            beetleid[] = ""
+        trpms = map(data2) do x
+            x.trpms
         end
     end
 
-    backingup = JSServe.Button("Backup", class = button_class)
-    left2backup = Observable(length(readdir(datadir)))
-    on(_ -> backup(left2backup), backingup)
+    @timeit to "build plots" begin
+        rpmplot = plotrpm(trpms)
+        frameplot = image(frame, scale_plot = false, show_axis = false)
+        disconnect!(AbstractPlotting.camera(frameplot))
+    end
+
+    @timeit to "all the UI" begin
+        timestamp = Ref("")
+        recording = JSServe.Checkbox(false)
+        on(x -> record(x, timestamp, setuplog), recording)
+
+        comment = JSServe.TextField("", class = text_class)
+        beetleid = JSServe.TextField("", class = text_class)
+        setuplog = []
+
+        saving = JSServe.Button("Save", class = button_class)
+        on(saving) do _
+            if recording[] 
+                recording[] = false
+            end
+        end
+        saving_now = Observable(false)
+        on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup), saving)
+
+        on(saving_now) do tf
+            if !tf
+                comment[] = ""
+                beetleid[] = ""
+            end
+        end
+
+        backingup = JSServe.Button("Backup", class = button_class)
+        left2backup = Observable(length(readdir(datadir)))
+        on(_ -> backup(left2backup), backingup)
 
 
-    setups = get_setups()
-    buttons = button.(eachrow(setups), Ref(setuplog))
+        setups = get_setups()
+        buttons = button.(eachrow(setups), Ref(setuplog))
+    end
+
+    println("reload:")
+    show(to)
 
     # print_sizes()
 
