@@ -50,6 +50,8 @@ task = @async while isopen(allwind) && isopen(camera)
         sleep(0.01)
     catch e
         @warn exception = e
+        print_sizes()
+        break
     end
 end
 
