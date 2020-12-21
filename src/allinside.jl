@@ -1,14 +1,7 @@
-using PyCall, Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, DataFrames, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, LibSerialPort, Observables, Tables, TableOperations
+using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, DataFrames, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, Tables, TableOperations, PyCall, LibSerialPort
 using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
-
-@async while true
-    println(now())
-    show(to)
-    sleep(60*60)
-end
-
 
 py"""
 import picamera
