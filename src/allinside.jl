@@ -81,8 +81,11 @@ end
 parse2wind(windrow) = [Wind(id, v) for (id, v) in enumerate(windrow)]
 
 function get_setups()
+    GC.gc(true)
     setup_file = @timeit to "1" download(setupsurl)
+    GC.gc(true)
     df = @timeit to "2" CSV.File(setup_file, header = 1:2, types = Dict(1 => String)) |> TableOperations.filter(x -> !ismissing(Tables.getcolumn(x, :setup_label))) |> TableOperations.transform(setup_label = strip) |> DataFrame
+    GC.gc(true)
     @timeit to "3" select(df, :setup_label => identity => :label, r"fan" => ByRow(parse2wind ∘ tuple) => :fans, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
 end
 
