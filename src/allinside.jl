@@ -1,7 +1,9 @@
-using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, DataFrames, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, Tables, TableOperations, PyCall, LibSerialPort
+using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, PyCall, LibSerialPort, TimerOutputs
 using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
+
+const to = TimerOutput()
 
 py"""
 import picamera
@@ -70,13 +72,24 @@ function plotrpm(trpms)
 end
 
 parse2wind(windrow) = [Wind(id, v) for (id, v) in enumerate(windrow)]
-
-_f(setup_file) = CSV.File(setup_file, header = 1:2, types = Dict(1 => String)) |> TableOperations.filter(x -> !ismissing(Tables.getcolumn(x, :setup_label))) |> TableOperations.transform(setup_label = strip) |> DataFrame
+parse2stars(starsrow) = [Star(v...) for v in Iterators.partition(starsrow, 4) if !any(ismissing, v)]
+function _f(tbl)
+    rs = Vector{NamedTuple{(:label, :fans, :stars),Tuple{String,Array{Wind,1},Array{Star,1}}}}(undef, length(tbl))
+    for nt in tbl
+        if !ismissing(nt.setup_label)
+            t = Tuple(nt)
+            fans = parse2wind(t[2:6])
+            stars = parse2stars(t[7:end])
+            push!(rs, (label = t[1], fans = fans, stars = stars))
+        end
+    end
+    rs
+end
 
 function get_setups()
     setup_file = download(setupsurl)
-    df = _f(setup_file)
-    select(df, :setup_label => identity => :label, r"fan" => ByRow(parse2wind ∘ tuple) => :fans, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
+    tbl = CSV.File(setup_file, header = 1:2, types = Dict(1 => String))
+    _f(tbl)
 end
 
 _fun(::Nothing, _) = nothing
@@ -183,65 +196,73 @@ end
 
 
 function handler(session, request)
-    filter!(((k,s),) -> !isopen(s), app.sessions)
-    empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
-    data2 = copy_observable(data, session)
+    @timeit to "all" begin
 
-    frame = map(data2) do x
-        x.frame
-    end
-    trpms = map(data2) do x
-        x.trpms
-    end
+        filter!(((k,s),) -> !isopen(s), app.sessions)
+        empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
+        data2 = copy_observable(data, session)
 
-    rpmplot = plotrpm(trpms)
-    frameplot = image(frame, scale_plot = false, show_axis = false)
-    disconnect!(AbstractPlotting.camera(frameplot))
-
-    timestamp = Ref("")
-    recording = JSServe.Checkbox(false)
-    on(x -> record(x, timestamp, setuplog), recording)
-
-    comment = JSServe.TextField("", class = text_class)
-    beetleid = JSServe.TextField("", class = text_class)
-    setuplog = []
-
-    saving = JSServe.Button("Save", class = button_class)
-    on(saving) do _
-        if recording[] 
-            recording[] = false
+        frame = map(data2) do x
+            x.frame
         end
-    end
-    saving_now = Observable(false)
-    on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup), saving)
-
-    on(saving_now) do tf
-        if !tf
-            comment[] = ""
-            beetleid[] = ""
+        trpms = map(data2) do x
+            x.trpms
         end
+
+        rpmplot = plotrpm(trpms)
+        frameplot = image(frame, scale_plot = false, show_axis = false)
+        disconnect!(AbstractPlotting.camera(frameplot))
+
+        timestamp = Ref("")
+        recording = JSServe.Checkbox(false)
+        on(x -> record(x, timestamp, setuplog), recording)
+
+        comment = JSServe.TextField("", class = text_class)
+        beetleid = JSServe.TextField("", class = text_class)
+        setuplog = []
+
+        saving = JSServe.Button("Save", class = button_class)
+        on(saving) do _
+            if recording[] 
+                recording[] = false
+            end
+        end
+        saving_now = Observable(false)
+        on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup), saving)
+
+        on(saving_now) do tf
+            if !tf
+                comment[] = ""
+                beetleid[] = ""
+            end
+        end
+
+        backingup = JSServe.Button("Backup", class = button_class)
+        left2backup = Observable(length(readdir(datadir)))
+        on(_ -> backup(left2backup), backingup)
     end
 
-    backingup = JSServe.Button("Backup", class = button_class)
-    left2backup = Observable(length(readdir(datadir)))
-    on(_ -> backup(left2backup), backingup)
 
-    setups = get_setups()
-    buttons = button.(eachrow(setups), Ref(setuplog))
+    @timeit to "bad" begin
+        setups = get_setups()
+        buttons = button.(setups, Ref(setuplog))
+    end
+
+    show(to)
 
     # print_sizes()
 
     return DOM.div(JSServe.TailwindCSS,
-        DOM.div(rpmplot),
-        DOM.div(frameplot),
-        DOM.div(buttons..., class = grid_class),
-        DOM.div("Record ", recording),
-        DOM.div("Beetle ID ", beetleid),
-        DOM.div("Comment ", comment),
-        DOM.div(saving),
-        DOM.div(backingup, left2backup, " runs left to backup"), 
-        class = "grid grid-cols-1 gap-4"
-    )
+                   DOM.div(rpmplot),
+                   DOM.div(frameplot),
+                   DOM.div(buttons..., class = grid_class),
+                   DOM.div("Record ", recording),
+                   DOM.div("Beetle ID ", beetleid),
+    DOM.div("Comment ", comment),
+    DOM.div(saving),
+    DOM.div(backingup, left2backup, " runs left to backup"), 
+    class = "grid grid-cols-1 gap-4"
+   )
 end
 
 
