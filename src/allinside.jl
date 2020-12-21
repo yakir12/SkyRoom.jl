@@ -211,7 +211,7 @@ end
 function handler(session, request)
     @timeit to "all" begin
 
-        filter!(((k,s),) -> !isopen(s), app.sessions)
+        # filter!(((k,s),) -> !isopen(s), app.sessions)
         empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
         data2 = copy_observable(data, session)
 
