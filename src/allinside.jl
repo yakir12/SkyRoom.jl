@@ -75,7 +75,7 @@ parse2wind(windrow) = [Wind(id, v) for (id, v) in enumerate(windrow)]
 parse2stars(starsrow) = [Star(v...) for v in Iterators.partition(starsrow, 4) if !any(ismissing, v)]
 
 function parse2one(tbl)
-    rs = NamedTuple{(:label, :fans, :stars),Tuple{String,Array{Wind,1},Array{Star,1}}}[]
+    rs = NamedTuple{(:label, :stars),Tuple{String,Array{Star,1}}}[]
     for nt in tbl
         if !ismissing(nt.setup_label)
             t = Tuple(nt)
@@ -87,7 +87,7 @@ function parse2one(tbl)
 end
 
 function parse2both(tbl)
-    rs = Vector{NamedTuple{(:label, :fans, :stars),Tuple{String,Array{Wind,1},Array{Star,1}}}}(undef, length(tbl))
+    rs = NamedTuple{(:label, :fans, :stars),Tuple{String,Array{Wind,1},Array{Star,1}}}[]
     for nt in tbl
         if !ismissing(nt.setup_label)
             t = Tuple(nt)
