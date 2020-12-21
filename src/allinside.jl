@@ -76,7 +76,7 @@ parse2stars(starsrow) = [Star(v...) for v in Iterators.partition(starsrow, 4) if
 
 function parse2one(setup_file)
     rs = NamedTuple{(:label, :stars),Tuple{String,Array{Star,1}}}[]
-    for nt in CSV.Rows(setup_file, header = 1:2, types = Dict(1 => String))
+    for nt in CSV.Rows(setup_file, header = 1:2)
         if !ismissing(nt.setup_label)
             t = Tuple(nt)
             stars = parse2stars(t[2:end])
@@ -88,7 +88,7 @@ end
 
 function parse2both(setup_file)
     rs = NamedTuple{(:label, :fans, :stars),Tuple{String,Array{Wind,1},Array{Star,1}}}[]
-    for nt in CSV.Rows(setup_file, header = 1:2, types = Dict(1 => String))
+    for nt in CSV.Rows(setup_file, header = 1:2)
         if !ismissing(nt.setup_label)
             t = Tuple(nt)
             fans = parse2wind(t[2:6])

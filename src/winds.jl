@@ -12,6 +12,7 @@ struct Wind
     pwm::UInt8
 end
 Wind(id::Int, ::Missing) = Wind(id, 0x00)
+Wind(id::Int, pwm::String) = Wind(id, parse(Int, pwm))
 
 
 tosecond(t::T) where {T <: TimePeriod}= t/convert(T, Second(1))

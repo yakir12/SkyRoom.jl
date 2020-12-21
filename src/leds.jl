@@ -13,6 +13,7 @@ struct Star
     intensity::Int
     radius::Int
 end
+Star(a::String, b::String, c::String, d::String) = Star(a, parse(Int, b), parse(Int, c), parse(Int, d))
 
 struct LED
     ind1::UInt8
