@@ -81,9 +81,9 @@ end
 parse2wind(windrow) = [Wind(id, v) for (id, v) in enumerate(windrow)]
 
 function get_setups()
-    setup_file = download(setupsurl)
-    df = CSV.File(setup_file, header = 1:2, types = Dict(1 => String)) |> TableOperations.filter(x -> !ismissing(Tables.getcolumn(x, :setup_label))) |> TableOperations.transform(setup_label = strip) |> DataFrame
-    select(df, :setup_label => identity => :label, r"fan" => ByRow(parse2wind ∘ tuple) => :fans, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
+    setup_file = @timeit to "1" download(setupsurl)
+    df = @timeit to "2" CSV.File(setup_file, header = 1:2, types = Dict(1 => String)) |> TableOperations.filter(x -> !ismissing(Tables.getcolumn(x, :setup_label))) |> TableOperations.transform(setup_label = strip) |> DataFrame
+    @timeit to "3" select(df, :setup_label => identity => :label, r"fan" => ByRow(parse2wind ∘ tuple) => :fans, r"star" => ByRow(parse2stars ∘ tuple) => :stars)
 end
 
 _fun(::Nothing, _) = nothing
@@ -249,7 +249,7 @@ function handler(session, request)
         end
 
         @timeit to "setup buttons" begin
-            setups = @timeit to "get buttons" get_setups()
+            setups = get_setups()
             buttons = @timeit to "build buttons" button.(eachrow(setups), Ref(setuplog))
         end
     end
