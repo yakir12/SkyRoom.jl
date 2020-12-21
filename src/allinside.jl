@@ -212,37 +212,46 @@ function handler(session, request)
     end
 
     @timeit to "all the UI" begin
-        timestamp = Ref("")
-        recording = JSServe.Checkbox(false)
-        on(x -> record(x, timestamp, setuplog), recording)
-
-        comment = JSServe.TextField("", class = text_class)
-        beetleid = JSServe.TextField("", class = text_class)
-        setuplog = []
-
-        saving = JSServe.Button("Save", class = button_class)
-        on(saving) do _
-            if recording[] 
-                recording[] = false
-            end
-        end
-        saving_now = Observable(false)
-        on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup), saving)
-
-        on(saving_now) do tf
-            if !tf
-                comment[] = ""
-                beetleid[] = ""
-            end
+        @timeit to "recording" begin
+            timestamp = Ref("")
+            recording = JSServe.Checkbox(false)
+            on(x -> record(x, timestamp, setuplog), recording)
         end
 
-        backingup = JSServe.Button("Backup", class = button_class)
-        left2backup = Observable(length(readdir(datadir)))
-        on(_ -> backup(left2backup), backingup)
+        @timeit to "comment mm" begin
+            comment = JSServe.TextField("", class = text_class)
+            beetleid = JSServe.TextField("", class = text_class)
+            setuplog = []
+        end
 
+        @timeit to "saving" begin
+            saving = JSServe.Button("Save", class = button_class)
+            on(saving) do _
+                if recording[] 
+                    recording[] = false
+                end
+            end
+            saving_now = Observable(false)
+            on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup), saving)
 
-        setups = get_setups()
-        buttons = button.(eachrow(setups), Ref(setuplog))
+            on(saving_now) do tf
+                if !tf
+                    comment[] = ""
+                    beetleid[] = ""
+                end
+            end
+        end
+
+        @timeit to "backing up" begin
+            backingup = JSServe.Button("Backup", class = button_class)
+            left2backup = Observable(length(readdir(datadir)))
+            on(_ -> backup(left2backup), backingup)
+        end
+
+        @timeit to "setup buttons" begin
+            setups = get_setups()
+            buttons = button.(eachrow(setups), Ref(setuplog))
+        end
     end
 
     println("reload:")
