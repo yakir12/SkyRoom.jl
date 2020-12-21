@@ -74,9 +74,9 @@ end
 parse2wind(windrow) = [Wind(id, v) for (id, v) in enumerate(windrow)]
 parse2stars(starsrow) = [Star(v...) for v in Iterators.partition(starsrow, 4) if !any(ismissing, v)]
 
-function parse2one(tbl)
+function parse2one(setup_file)
     rs = NamedTuple{(:label, :stars),Tuple{String,Array{Star,1}}}[]
-    for nt in tbl
+    for nt in CSV.Rows(setup_file, header = 1:2, types = Dict(1 => String))
         if !ismissing(nt.setup_label)
             t = Tuple(nt)
             stars = parse2stars(t[2:end])
@@ -86,9 +86,9 @@ function parse2one(tbl)
     rs
 end
 
-function parse2both(tbl)
+function parse2both(setup_file)
     rs = NamedTuple{(:label, :fans, :stars),Tuple{String,Array{Wind,1},Array{Star,1}}}[]
-    for nt in tbl
+    for nt in CSV.Rows(setup_file, header = 1:2, types = Dict(1 => String))
         if !ismissing(nt.setup_label)
             t = Tuple(nt)
             fans = parse2wind(t[2:6])
@@ -101,8 +101,7 @@ end
 
 function get_setups()
     setup_file = @timeit to "1" download(setupsurl)
-    tbl = @timeit to "2" CSV.File(setup_file, header = 1:2, types = Dict(1 => String))
-    @timeit to "3" nicolas ? parse2both(tbl) : parse2one(tbl)
+    @timeit to "3" nicolas ? parse2both(setup_file) : parse2one(setup_file)
 end
 
 _fun(::Nothing, _) = nothing
