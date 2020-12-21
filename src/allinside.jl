@@ -100,9 +100,9 @@ function parse2both(tbl)
 end
 
 function get_setups()
-    setup_file = download(setupsurl)
-    tbl = CSV.File(setup_file, header = 1:2, types = Dict(1 => String))
-    nicolas ? parse2both(tbl) : parse2one(tbl)
+    setup_file = @timeit to "1" download(setupsurl)
+    tbl = @timeit to "2" CSV.File(setup_file, header = 1:2, types = Dict(1 => String))
+    @timeit to "3" nicolas ? parse2both(tbl) : parse2one(tbl)
 end
 
 _fun(::Nothing, _) = nothing
@@ -256,10 +256,8 @@ function handler(session, request)
     end
 
 
-    @timeit to "bad" begin
-        setups = get_setups()
-        buttons = button.(setups, Ref(setuplog))
-    end
+    setups = get_setups()
+    buttons = button.(setups, Ref(setuplog))
 
     show(to)
 
@@ -271,7 +269,7 @@ function handler(session, request)
                    DOM.div(buttons..., class = grid_class),
                    DOM.div("Record ", recording),
                    DOM.div("Beetle ID ", beetleid),
-    DOM.div("Comment ", comment),
+                   DOM.div("Comment ", comment),
     DOM.div(saving),
     DOM.div(backingup, left2backup, " runs left to backup"), 
     class = "grid grid-cols-1 gap-4"
