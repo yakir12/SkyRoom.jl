@@ -206,55 +206,51 @@ end
 
 
 function handler(session, request)
-    a = @allocated begin
-        # filter!(((k,s),) -> !isopen(s), app.sessions)
-        empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
-        data2 = copy_observable(data, session)
+    # filter!(((k,s),) -> !isopen(s), app.sessions)
+    empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
+    data2 = copy_observable(data, session)
 
-        frame = map(data2) do x
-            x.frame
+    frame = map(data2) do x
+        x.frame
+    end
+    trpms = map(data2) do x
+        x.trpms
+    end
+
+    rpmplot = plotrpm(trpms)
+    frameplot = image(frame, scale_plot = false, show_axis = false)
+    disconnect!(AbstractPlotting.camera(frameplot))
+
+    timestamp = Ref("")
+    recording = JSServe.Checkbox(false)
+    on(x -> record(x, timestamp, setuplog), recording)
+
+    comment = JSServe.TextField("", class = text_class)
+    beetleid = JSServe.TextField("", class = text_class)
+    setuplog = []
+
+    saving = JSServe.Button("Save", class = button_class)
+    on(saving) do _
+        if recording[] 
+            recording[] = false
         end
-        trpms = map(data2) do x
-            x.trpms
+    end
+    saving_now = Observable(false)
+    on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup), saving)
+
+    on(saving_now) do tf
+        if !tf
+            comment[] = ""
+            beetleid[] = ""
         end
+    end
 
-        rpmplot = plotrpm(trpms)
-        frameplot = image(frame, scale_plot = false, show_axis = false)
-        disconnect!(AbstractPlotting.camera(frameplot))
+    backingup = JSServe.Button("Backup", class = button_class)
+    left2backup = Observable(length(readdir(datadir)))
+    on(_ -> backup(left2backup), backingup)
 
-        timestamp = Ref("")
-        recording = JSServe.Checkbox(false)
-        on(x -> record(x, timestamp, setuplog), recording)
-
-        comment = JSServe.TextField("", class = text_class)
-        beetleid = JSServe.TextField("", class = text_class)
-        setuplog = []
-
-        saving = JSServe.Button("Save", class = button_class)
-        on(saving) do _
-            if recording[] 
-                recording[] = false
-            end
-        end
-        saving_now = Observable(false)
-        on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup), saving)
-
-        on(saving_now) do tf
-            if !tf
-                comment[] = ""
-                beetleid[] = ""
-            end
-        end
-
-        backingup = JSServe.Button("Backup", class = button_class)
-        left2backup = Observable(length(readdir(datadir)))
-        on(_ -> backup(left2backup), backingup)
-    end; a > 0 && println(Base.format_bytes(a))
-
-    @allocated begin
-        setups = get_setups()
-        buttons = button.(setups, Ref(setuplog))
-    end; a > 0 && println(Base.format_bytes(a))
+    setups = get_setups()
+    buttons = button.(setups, Ref(setuplog))
 
     # print_sizes()
 
@@ -265,10 +261,10 @@ function handler(session, request)
                    DOM.div("Record ", recording),
                    DOM.div("Beetle ID ", beetleid),
                    DOM.div("Comment ", comment),
-    DOM.div(saving),
-    DOM.div(backingup, left2backup, " runs left to backup"), 
-    class = "grid grid-cols-1 gap-4"
-   )
+                   DOM.div(saving),
+                   DOM.div(backingup, left2backup, " runs left to backup"), 
+                   class = "grid grid-cols-1 gap-4"
+                  )
 end
 
 
@@ -287,8 +283,8 @@ function print_sizes()
     end
     sort!(mem, by = last, rev = true)
     n = length(mem)
-    if n > 15
-        deleteat!(mem, 16:n)
+    if n > 30
+        deleteat!(mem, 31:n)
     end
     println("Memory usage:")
     for (txt, i) in mem
