@@ -3,6 +3,29 @@ using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
 
+function print_sizes()
+    mem = Pair{String, Int}[]
+    for m in values(Base.loaded_modules), vs in names(m, all = true)
+        if isdefined(m, vs)
+            v = getfield(m, vs)
+            x = Base.summarysize(v)
+            if x > 10^6
+                push!(mem, string(m, "; ", vs, ": ") => x) 
+            end
+        end
+    end
+    sort!(mem, by = last, rev = true)
+    n = length(mem)
+    if n > 30
+        deleteat!(mem, 31:n)
+    end
+    println("Memory usage:")
+    for (txt, i) in mem
+        println(txt, Base.format_bytes(i))
+    end
+    println("")
+end
+
 py"""
 import picamera
 import io
@@ -50,6 +73,7 @@ task = @async while isopen(allwind) && isopen(camera)
         sleep(0.01)
     catch e
         @warn exception = e
+        @show now()
         print_sizes()
         break
     end
@@ -270,28 +294,6 @@ end
 
 app = JSServe.Application(handler, "0.0.0.0", 8082);
 
-function print_sizes()
-    mem = Pair{String, Int}[]
-    for m in values(Base.loaded_modules), vs in names(m, all = true)
-        if isdefined(m, vs)
-            v = getfield(m, vs)
-            x = Base.summarysize(v)
-            if x > 10^6
-                push!(mem, string(m, "; ", vs, ": ") => x) 
-            end
-        end
-    end
-    sort!(mem, by = last, rev = true)
-    n = length(mem)
-    if n > 30
-        deleteat!(mem, 31:n)
-    end
-    println("Memory usage:")
-    for (txt, i) in mem
-        println(txt, Base.format_bytes(i))
-    end
-    println("")
-end
 
 
 
