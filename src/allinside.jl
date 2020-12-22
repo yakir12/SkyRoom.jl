@@ -278,7 +278,7 @@ function handler(allwind, led_arduino, camera, data, session, request)
     on(_ -> backup(left2backup), backingup)
 
     setups = get_setups()
-    buttons = button.(allwind, led_arduino, setups, Ref(setuplog))
+    buttons = [button(allwind, led_arduino, setup, setuplog) for setup in setups]
 
     # print_sizes()
 
