@@ -11,9 +11,13 @@ sudo mount /dev/sda2 /media/yakir/rootfs
 # julia 1.3.1
 wget https://julialang-s3.julialang.org/bin/linux/armv7l/1.3/julia-1.3.1-linux-armv7l.tar.gz -q -O - | tar -xzf - -C /media/yakir/rootfs/home/pi/
 
+# julia 1.5.3
+wget https://julialangnightlies.s3.amazonaws.com/pretesting/linux/armv7l/1.5/julia-788b2c77c1-linuxarmv7l.tar.gz -q -O - | tar -xzf - -C /media/yakir/rootfs/home/pi/
+
 # julia 1.6
 wget https://s3.amazonaws.com/julialangnightlies/assert_pretesting/linux/armv7l/1.6/julia-a8393c4a3b-linuxarmv7l.tar.gz -q -O - | tar -xzf - -C /media/yakir/rootfs/home/pi/
 
+     https://s3.amazonaws.com/julialangnightlies/assert_pretesting/linux/armv7l/1.6/julia-a8393c4a3b-linuxarmv7l.tar.gz
 
 # kill on board LEDs and allow greyworld
 echo "disable_camera_led=1
@@ -55,10 +59,9 @@ chmod 770 /media/yakir/rootfs/home/pi/mnt
 # echo "PARTUUID=5b8d4d0d-01 /home/pi/mnt ext4 defaults,users,nofail 0 0" | sudo tee -a /media/yakir/rootfs/etc/fstab > /dev/null
 
 # change hostname
-# HOSTNAME=sheldon
-# HOSTNAME=nicolas
-sudo sed -i 's/raspberrypi/$HOSTNAME/g' /etc/hostname 
-sudo sed -i 's/raspberrypi/$HOSTNAME/g' /etc/hosts
+sudo sed -i 's/raspberrypi/skyroom/g' /etc/hostname 
+sudo sed -i 's/raspberrypi/skyroom/g' /etc/hosts
+
 
 # add aws credentials
 cp /home/yakir/.aws -rp /media/yakir/rootfs/home/pi/
