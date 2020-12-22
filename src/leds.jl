@@ -1,9 +1,19 @@
+const strips = 2
+const ledsperstrip = 150
+const brightness = 1
+const deadleds = 9
+const cardinals = ["NE", "SW", "SE", "NW"]
+const liveleds = ledsperstrip - deadleds
+const ledport = nicolas ? "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00" : "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"
+# const ledport = "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351317061-if00"
+
 struct Star
     cardinality::String
     elevation::Int
     intensity::Int
     radius::Int
 end
+Star(a::String, b::String, c::String, d::String) = Star(a, parse(Int, b), parse(Int, c), parse(Int, d))
 
 struct LED
     ind1::UInt8
@@ -49,14 +59,12 @@ mutable struct LEDArduino <: AbstractArduino
     port::String
     sp::SerialPort
     pwm::Observable{Vector{UInt8}}
-    function LEDArduino(port::String)
-        sp = LibSerialPort.open(port, baudrate)
+    function LEDArduino()
+        sp = LibSerialPort.open(ledport, baudrate)
         pwm = Observable(UInt8[0, 0])
-        new(port, sp, pwm)
+        on(pwm) do x
+            encode(sp, x)
+        end
+        new(ledport, sp, pwm)
     end
 end
-
-connect!(a::LEDArduino) = on(a.pwm) do x
-    encode(a.sp, x)
-end
-
