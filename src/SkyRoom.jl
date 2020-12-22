@@ -82,9 +82,9 @@ function initialize()
             data[] = (; frame = snap(camera), trpms = get_rpms(allwind))
             sleep(0.01)
         catch e
-            @warn exception = e
             @show now()
             print_sizes()
+            throw(e)
             break
         end
     end
