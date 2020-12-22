@@ -1,10 +1,19 @@
+const top_rpm = 12650
+const t4 = 15000000
+const shortest_t = t4/1.1top_rpm
+const fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]
+# const fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351F0F0F0-if00"]
+nports = length(fan_ports)
+const rpmplt_cont = (colors = repeat(1:nports, inner = [3]), x = vcat(((i - 1)*(nports - 1) + 1 : (i - 1)*(nports - 1) + 3 for i in 1:nports)...), y = top_rpm*ones(3nports), resolution = (540, round(Int, 3nports + 3*540/(3nports+4))))
+
+
 struct Wind
     id::Int
     pwm::UInt8
 end
 Wind(id::Int, ::Missing) = Wind(id, 0x00)
+Wind(id::Int, pwm::String) = Wind(id, parse(Int, pwm))
 
-parse2wind(windrow) = [Wind(id, v) for (id, v) in enumerate(windrow)]
 
 tosecond(t::T) where {T <: TimePeriod}= t/convert(T, Second(1))
 t₀ = now()
@@ -64,24 +73,52 @@ mutable struct FanArduino <: AbstractArduino
         c = ReentrantLock()
         sp = LibSerialPort.open(port, baudrate)
         pwm = Observable(0x00)
+        on(pwm) do x
+            set_pwm!(sp, c, x)
+        end
         msg = Vector{UInt8}(undef, 12)
         rpm = Vector{Float64}(undef, 3)
         new(id, c, port, sp, msg, rpm, pwm)
     end
 end
 
-connect!(a::FanArduino) = on(a.pwm) do x
-    set_pwm!(a.sp, a.c, x)
-end
-
 update_rpm!(a::FanArduino) = update_rpm!(a.sp, a.c, a.pwm, a.msg, a.rpm)
 
 get_rpm(a::FanArduino) = a.rpm
 
-function get_rpms(arduinos::Vector{FanArduino})
-    @sync for a in arduinos
-        @async update_rpm!(a)
+mutable struct AllWind
+    arduinos::Vector{FanArduino}
+    io::IOStream
+    framerate::Int
+    function AllWind(arduinos::Vector{FanArduino}, framerate::Int)
+        io = open(tempname(), "w")
+        close(io)
+        new(arduinos, io, framerate)
     end
-    now() => get_rpm.(arduinos)
 end
 
+function get_rpms(allwind::AllWind)
+    @sync for a in allwind.arduinos
+        @async update_rpm!(a)
+    end
+    now() => get_rpm.(allwind.arduinos)
+end
+
+function record(allwind::AllWind, folder)
+    !isdir(folder) && mkpath(folder)
+    isopen(allwind.io) && close(allwind.io)
+    allwind.io = open(folder / "fans.csv", "w")
+    println(allwind.io, "time,", join([join(["fan$(a.id)_speed$j" for j in 1:3], ",") for a in allwind.arduinos], ","))
+    @async while isopen(allwind.io)
+        try 
+            t, rpms = get_rpms(allwind)
+            println(allwind.io, t, ",",join(Iterators.flatten(rpms), ","))
+        catch e
+            @warn exception = e
+        end
+        sleep(1/allwind.framerate)
+    end
+end
+
+Base.isopen(allwind::AllWind) = all(isopen, allwind.arduinos)
+Base.close(allwind::AllWind) = close.(allwind.arduinos)
