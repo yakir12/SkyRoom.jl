@@ -2,7 +2,7 @@ module SkyRoom
 
 export main
 
-using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, PyCall, LibSerialPort, Missings
+using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, PyCall, LibSerialPort, Missings, MemoryHunter
 using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
@@ -83,9 +83,8 @@ function initialize()
             sleep(0.01)
         catch e
             @show now()
-            print_sizes()
+            MemoryHunter.print_sizes()
             throw(e)
-            break
         end
     end
     return allwind, led_arduino, camera, data, task
