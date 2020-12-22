@@ -200,6 +200,7 @@ function save(timestamp, beetleid, comment, setuplog, left2backup, msg)
     left2backup[] += 1
     comment[] = ""
     beetleid[] = ""
+    timestamp[] = "garbage"
     msg[] = "Saved"
     return nothing
 end
@@ -306,7 +307,7 @@ function handler(allwind, led_arduino, camera, data, session, request)
         DOM.div("Comment ", comment),
         DOM.div(saving),
         DOM.div(backingup, left2backup, " runs left to backup"), 
-        DOM.div(msg),
+        DOM.div("message: ", msg),
         class = "grid grid-cols-1 gap-4"
     )
 end
