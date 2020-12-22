@@ -182,7 +182,7 @@ function record(tf, allwind, camera, timestamp, setuplog)
     end
 end
 
-function save(donesave, timestamp, beetleid, comment, setuplog, left2backup, msg)
+function save(timestamp, beetleid, comment, setuplog, left2backup, msg)
     folder = datadir / timestamp[]
     if !isdir(folder)
         msg[] = "You haven't recorded a video yet, there is nothing to save"
@@ -198,8 +198,8 @@ function save(donesave, timestamp, beetleid, comment, setuplog, left2backup, msg
         TOML.print(io, md)
     end
     left2backup[] += 1
-            comment[] = ""
-            beetleid[] = ""
+    comment[] = ""
+    beetleid[] = ""
     msg[] = "Saved"
     return nothing
 end
@@ -271,21 +271,21 @@ function handler(allwind, led_arduino, camera, data, session, request)
     frameplot = image(frame, scale_plot = false, show_axis = false)
     disconnect!(AbstractPlotting.camera(frameplot))
 
+    setuplog = []
     timestamp = Ref("")
     recording = JSServe.Checkbox(false)
-    on(x -> record(x, allwind, camera, timestamp, setuplog, msg), recording)
+    on(x -> record(x, allwind, camera, timestamp, setuplog), recording)
 
     comment = JSServe.TextField("", class = text_class)
     beetleid = JSServe.TextField("", class = text_class)
-    setuplog = []
 
     saving = JSServe.Button("Save", class = button_class)
-    on(saving) do x
+    on(saving) do _
         if recording[] 
             recording[] = false
             sleep(0.1)
         end
-        save(x, timestamp, beetleid, comment, setuplog, left2backup, msg)
+        save(timestamp, beetleid, comment, setuplog, left2backup, msg)
     end
 
     backingup = JSServe.Button("Backup", class = button_class)
@@ -298,17 +298,17 @@ function handler(allwind, led_arduino, camera, data, session, request)
     # print_sizes()
 
     return DOM.div(JSServe.TailwindCSS,
-                   DOM.div(rpmplot),
-                   DOM.div(frameplot),
-                   DOM.div(buttons..., class = grid_class),
-                   DOM.div("Record ", recording),
-                   DOM.div("Beetle ID ", beetleid),
-                   DOM.div("Comment ", comment),
-                   DOM.div(saving),
-                   DOM.div(backingup, left2backup, " runs left to backup"), 
-                   DOM.div(msg),
-                   class = "grid grid-cols-1 gap-4"
-                  )
+        DOM.div(rpmplot),
+        DOM.div(frameplot),
+        DOM.div(buttons..., class = grid_class),
+        DOM.div("Record ", recording),
+        DOM.div("Beetle ID ", beetleid),
+        DOM.div("Comment ", comment),
+        DOM.div(saving),
+        DOM.div(backingup, left2backup, " runs left to backup"), 
+        DOM.div(msg),
+        class = "grid grid-cols-1 gap-4"
+    )
 end
 
 function main()
