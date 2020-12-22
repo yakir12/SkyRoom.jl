@@ -171,7 +171,7 @@ function record(tf, allwind, camera, timestamp, setuplog)
     if tf
         timestamp[] = string(now())
         folder = datadir / timestamp[]
-        mkdir(folder)
+        !isdir(folder) && mkdir(folder)
         camera.cam.recording && camera.cam.stop_recording()
         camera.cam.start_recording(string(folder / "video.h264"))
         record(allwind, folder)
@@ -182,25 +182,30 @@ function record(tf, allwind, camera, timestamp, setuplog)
     end
 end
 
-function save(donesave, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup)
-    while recording[]
-        @info "waiting for the recording to end"
+function save(donesave, timestamp, beetleid, comment, setuplog, left2backup, msg)
+    folder = datadir / timestamp[]
+    if !isdir(folder)
+        msg[] = "You haven't recorded a video yet, there is nothing to save"
+        return nothing
     end
-    saving_now[] = true
+    msg[] = "Saving"
     md = Dict()
     md["timestamp"] = timestamp[]
     md["beetleid"] = beetleid[]
     md["comment"] = comment[]
     md["setuplog"] = Dict(string(t) => v for (t,v) in setuplog)
-    folder = datadir / timestamp[]
     open(folder / "metadata.toml", "w") do io
         TOML.print(io, md)
     end
     left2backup[] += 1
-    saving_now[] = false
+            comment[] = ""
+            beetleid[] = ""
+    msg[] = "Saved"
+    return nothing
 end
 
-function backup(left2backup)
+function backup(left2backup msg)
+    msg[] = "Started backing up..."
     for folder in readpath(datadir)
         tmp = Tar.create(string(folder))
         rm(folder, recursive = true)
@@ -208,6 +213,7 @@ function backup(left2backup)
         run(`aws s3 mv $tmp s3://$bucket/$name.tar --quiet`)
         left2backup[] = length(readdir(datadir))
     end
+    msg[] = "Finished backing up!"
 end
 
 function copy_observable(o, session)
@@ -246,6 +252,14 @@ function handler(allwind, led_arduino, camera, data, session, request)
     empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
     data2 = copy_observable(data, session)
 
+    msg = Observable("")
+    on(msg) do x
+        if !isempty(x)
+            sleep(1)
+            msg[] = ""
+        end
+    end
+
     frame = map(data2) do x
         x.frame
     end
@@ -259,31 +273,24 @@ function handler(allwind, led_arduino, camera, data, session, request)
 
     timestamp = Ref("")
     recording = JSServe.Checkbox(false)
-    on(x -> record(x, allwind, camera, timestamp, setuplog), recording)
+    on(x -> record(x, allwind, camera, timestamp, setuplog, msg), recording)
 
     comment = JSServe.TextField("", class = text_class)
     beetleid = JSServe.TextField("", class = text_class)
     setuplog = []
 
     saving = JSServe.Button("Save", class = button_class)
-    on(saving) do _
+    on(saving) do x
         if recording[] 
             recording[] = false
+            sleep(0.1)
         end
-    end
-    saving_now = Observable(false)
-    on(x -> save(x, recording, saving_now, timestamp, beetleid, comment, setuplog, left2backup), saving)
-
-    on(saving_now) do tf
-        if !tf
-            comment[] = ""
-            beetleid[] = ""
-        end
+        save(x, timestamp, beetleid, comment, setuplog, left2backup, msg)
     end
 
     backingup = JSServe.Button("Backup", class = button_class)
     left2backup = Observable(length(readdir(datadir)))
-    on(_ -> backup(left2backup), backingup)
+    on(_ -> backup(left2backup, msg), backingup)
 
     setups = get_setups()
     buttons = [button(allwind, led_arduino, setup, setuplog) for setup in setups]
@@ -299,6 +306,7 @@ function handler(allwind, led_arduino, camera, data, session, request)
                    DOM.div("Comment ", comment),
                    DOM.div(saving),
                    DOM.div(backingup, left2backup, " runs left to backup"), 
+                   DOM.div(msg),
                    class = "grid grid-cols-1 gap-4"
                   )
 end
