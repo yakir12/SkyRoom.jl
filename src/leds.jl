@@ -45,16 +45,6 @@ end
 parse2arduino(leds::Vector{LED}) = vcat((led.buff for led in leds)...)
 parse2arduino(stars::Vector{Star}) = isempty(stars) ? zeros(UInt8, 5) : vcat((parse2arduino(LED(star)) for star in stars)...)
 
-function parse2stars(starrow)
-    stars = Star[]
-    for x in Iterators.partition(starrow, 4)
-        if !any(ismissing, x)
-            push!(stars,  Star(x...))
-        end
-    end
-    return stars
-end
-
 mutable struct LEDArduino <: AbstractArduino
     port::String
     sp::SerialPort
