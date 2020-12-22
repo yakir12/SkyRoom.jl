@@ -254,12 +254,12 @@ function handler(allwind, led_arduino, camera, data, session, request)
     data2 = copy_observable(data, session)
 
     msg = Observable("")
-    on(msg) do x
-        if !isempty(x)
-            sleep(1)
-            msg[] = ""
-        end
-    end
+    # on(msg) do x
+    #     if !isempty(x)
+    #         sleep(1)
+    #         msg[] = ""
+    #     end
+    # end
 
     frame = map(data2) do x
         x.frame
