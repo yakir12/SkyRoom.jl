@@ -23,6 +23,7 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
 
 [compat]
+DataStructures = "0.18"
 DataFrames = "0.22"
 JSServe = "0.6"
 HTTP = "0.9"
