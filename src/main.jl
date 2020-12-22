@@ -50,17 +50,6 @@ function restart(a::SkyRoom1)
     connect!(a)
 end
 
-function main(le)
-    left2upload = Observable(0.0)
-    if le
-        skyroom2 = SkyRoom2()
-        app = JSServe.Application((a, b) -> dom_handler(skyroom2, left2upload, a, b), "0.0.0.0", port);
-    else
-        skyroom = SkyRoom1()
-        app = JSServe.Application((a, b) -> dom_handler(skyroom, left2upload, a, b), "0.0.0.0", port);
-    end
-end
-
 function dropdown(options, option)
     dropdown_onchange = js"update_obs($option, this.options[this.selectedIndex].text);"
     DOM.select(DOM.option.(options); class="bandpass-dropdown", onclick=dropdown_onchange)
@@ -226,7 +215,7 @@ function dom_handler(sr::SkyRoom1, left2upload, session, request)
 
     # GC.gc(true)
 
-    #print_sizes()
+    # print_sizes()
 
     empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
 
@@ -319,7 +308,7 @@ function dom_handler(sr::SkyRoom2, left2upload, session, request)
 
     # GC.gc(true)
 
-    #print_sizes()
+    # print_sizes()
 
     empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
 
@@ -342,25 +331,25 @@ end
 #     println("Free: ", Base.format_bytes(Sys.free_memory()))
 # end
 
-#function print_sizes()
-#    mem = Pair{String, Int}[]
-#    for m in values(Base.loaded_modules), vs in names(m, all = true)
-#        if isdefined(m, vs)
-#            v = getfield(m, vs)
-#            x = Base.summarysize(v)
-#            if x > 10^6
-#                push!(mem, string(m, "; ", vs, ": ") => x) 
-#            end
-#        end
-#    end
-#    sort!(mem, by = last, rev = true)
-#    n = length(mem)
-#    if n > 15
-#        deleteat!(mem, 16:n)
-#    end
-#    println("Memory usage:")
-#    for (txt, i) in mem
-#        println(txt, Base.format_bytes(i))
-#    end
-#    println("")
-#end
+# function print_sizes()
+#     mem = Pair{String, Int}[]
+#     for m in values(Base.loaded_modules), vs in names(m, all = true)
+#         if isdefined(m, vs)
+#             v = getfield(m, vs)
+#             x = Base.summarysize(v)
+#             if x > 10^6
+#                 push!(mem, string(m, "; ", vs, ": ") => x) 
+#             end
+#         end
+#     end
+#     sort!(mem, by = last, rev = true)
+#     n = length(mem)
+#     if n > 15
+#         deleteat!(mem, 16:n)
+#     end
+#     println("Memory usage:")
+#     for (txt, i) in mem
+#         println(txt, Base.format_bytes(i))
+#     end
+#     println("")
+# end
