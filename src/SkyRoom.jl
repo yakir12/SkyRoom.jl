@@ -204,7 +204,7 @@ function save(donesave, timestamp, beetleid, comment, setuplog, left2backup, msg
     return nothing
 end
 
-function backup(left2backup msg)
+function backup(left2backup, msg)
     msg[] = "Started backing up..."
     for folder in readpath(datadir)
         tmp = Tar.create(string(folder))
