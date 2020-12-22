@@ -23,6 +23,8 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
 
 [compat]
+FileIO = "1.4"
+Tar = "1.9"
 julia = "1"
 
 [extras]
