@@ -62,21 +62,25 @@ Base.close(::Nothing) = nothing
 include("camera.jl")
 
 const framerate = 30
-allwind = nicolas ? AllWind([FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)], 1)  : nothing
-led_arduino = LEDArduino()
-camera = PiCamera(framerate, 67, 67, 4)
 
-const data = Observable((frame = snap(camera), trpms = get_rpms(allwind)))
-task = @async while isopen(allwind) && isopen(camera)
-    try
-        data[] = (; frame = snap(camera), trpms = get_rpms(allwind))
-        sleep(0.01)
-    catch e
-        @warn exception = e
-        @show now()
-        print_sizes()
-        break
+function initialize()
+    allwind = nicolas ? AllWind([FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)], 1)  : nothing
+    led_arduino = LEDArduino()
+    camera = PiCamera(framerate, 67, 67, 4)
+
+    data = Observable((frame = snap(camera), trpms = get_rpms(allwind)))
+    task = @async while isopen(allwind) && isopen(camera)
+        try
+            data[] = (; frame = snap(camera), trpms = get_rpms(allwind))
+            sleep(0.01)
+        catch e
+            @warn exception = e
+            @show now()
+            print_sizes()
+            break
+        end
     end
+    return allwind, led_arduino, camera, data, task
 end
 
 function plotrpm(trpms)
@@ -131,7 +135,7 @@ _fun(allwind, setup) = for a in allwind.arduinos
     a.pwm[] = setup.fans[a.id].pwm
 end
 
-function button(setup, setuplog)
+function button(allwind, led_arduino, setup, setuplog)
     b = JSServe.Button(string(setup.label), class = button_class)
     on(b) do _
         _fun(allwind, setup)
@@ -155,7 +159,7 @@ end
 stop_record(::Nothing) = nothing
 stop_record(allwind) = close(allwind.io)
 
-function record(tf, timestamp, setuplog)
+function record(tf, allwind, camera, timestamp, setuplog)
     if tf
         timestamp[] = string(now())
         folder = datadir / timestamp[]
@@ -229,7 +233,7 @@ end
 
 
 
-function handler(session, request)
+function handler(allwind, led_arduino, camera, data, session, request)
     # filter!(((k,s),) -> !isopen(s), app.sessions)
     empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
     data2 = copy_observable(data, session)
@@ -247,7 +251,7 @@ function handler(session, request)
 
     timestamp = Ref("")
     recording = JSServe.Checkbox(false)
-    on(x -> record(x, timestamp, setuplog), recording)
+    on(x -> record(x, allwind, camera, timestamp, setuplog), recording)
 
     comment = JSServe.TextField("", class = text_class)
     beetleid = JSServe.TextField("", class = text_class)
@@ -274,7 +278,7 @@ function handler(session, request)
     on(_ -> backup(left2backup), backingup)
 
     setups = get_setups()
-    buttons = button.(setups, Ref(setuplog))
+    buttons = button.(allwind, led_arduino, setups, Ref(setuplog))
 
     # print_sizes()
 
@@ -291,8 +295,10 @@ function handler(session, request)
                   )
 end
 
-
-app = JSServe.Application(handler, "0.0.0.0", 8082);
+function main()
+    allwind, led_arduino, camera, data, task = initialize()
+    JSServe.Application((session, request) -> handler(allwind, led_arduino, camera, data, session, request), "0.0.0.0", 8082)
+end
 
 
 
