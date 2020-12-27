@@ -48,7 +48,7 @@ mutable struct LEDArduino <: AbstractArduino
     sp::SerialPort
     pwm::Observable{Vector{UInt8}}
     function LEDArduino()
-        ledport = nicolas ? "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00" : "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"
+        ledport = nicolas[] ? "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00" : "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"
         sp = LibSerialPort.open(ledport, baudrate[])
         pwm = Observable(UInt8[0, 0])
         on(pwm) do x
