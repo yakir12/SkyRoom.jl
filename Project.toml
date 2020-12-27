@@ -35,7 +35,7 @@ LibSerialPort = "0.5"
 Missings = "0.4"
 Observables = "0.3"
 PyCall = "1.92"
-Tar = "1.9"
+Tar = "1.8"
 WGLMakie = "0.2"
 julia = "1"
 
