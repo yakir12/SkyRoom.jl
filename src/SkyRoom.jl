@@ -78,15 +78,15 @@ function initialize()
 
     data = Observable((frame = snap(camera), trpms = get_rpms(allwind)))
     task = @async while isopen(allwind) && isopen(camera)
-        try
+        # try
             data[] = (; frame = snap(camera), trpms = get_rpms(allwind))
             sleep(0.01)
-        catch e
+        #=catch e
             @show now()
             MemoryHunter.print_sizes()
             @show e
             throw(e)
-        end
+        end=#
     end
     return allwind, led_arduino, camera, data, task
 end
