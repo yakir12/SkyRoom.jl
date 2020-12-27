@@ -57,9 +57,9 @@ end
 include("cobs.jl")
 include("abstractarduinos.jl")
 include("leds.jl")
-if nicolas[]
-    include("winds.jl")
-end
+# if nicolas[]
+include("winds.jl")
+# end
 
 get_rpms(::Nothing) = nothing
 record(::Nothing, _) = nothing
