@@ -84,6 +84,7 @@ function initialize()
         catch e
             @show now()
             MemoryHunter.print_sizes()
+            @show e
             throw(e)
         end
     end
