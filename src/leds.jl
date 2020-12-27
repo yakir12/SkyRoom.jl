@@ -1,11 +1,5 @@
-const strips = 2
-const ledsperstrip = 150
-const brightness = 1
-const deadleds = 9
-const cardinals = ["NE", "SW", "SE", "NW"]
-const liveleds = ledsperstrip - deadleds
-const ledport = nicolas ? "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00" : "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"
-# const ledport = "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351317061-if00"
+# const strips = 2
+# const brightness = 1
 
 struct Star
     cardinality::String
@@ -25,6 +19,9 @@ end
 
 
 function index2led(c::Int, e)
+    deadleds = 9
+    ledsperstrip = 150
+    liveleds = ledsperstrip - deadleds
     a = isodd(c) ? e : liveleds - e + 1
     b = c < 3 ? 0 : ledsperstrip
     pos = a + b - 1
@@ -32,6 +29,7 @@ function index2led(c::Int, e)
 end
 
 function LED(s::Star)
+    cardinals = ["NE", "SW", "SE", "NW"]
     c = findfirst(==(s.cardinality), cardinals)
     intensity = s.intensity
     map(-s.radius:s.radius) do i
@@ -50,7 +48,8 @@ mutable struct LEDArduino <: AbstractArduino
     sp::SerialPort
     pwm::Observable{Vector{UInt8}}
     function LEDArduino()
-        sp = LibSerialPort.open(ledport, baudrate)
+        ledport = nicolas ? "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_757353036313519070B1-if00" : "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"
+        sp = LibSerialPort.open(ledport, baudrate[])
         pwm = Observable(UInt8[0, 0])
         on(pwm) do x
             encode(sp, x)

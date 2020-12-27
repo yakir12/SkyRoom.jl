@@ -2,7 +2,7 @@ module SkyRoom
 
 export main
 
-using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, PyCall, LibSerialPort, Missings, MemoryHunter
+using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, PyCall, LibSerialPort, Missings#, MemoryHunter
 using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
@@ -30,7 +30,17 @@ using JSServe: @js_str
 #     println("")
 # end
 
+const t₀ = Ref{DateTime}()
+const datadir = Ref{PosixPath}()
+const nicolas = Ref{Bool}()
+const baudrate = Ref{Int}()
+
 function __init__()
+    t₀[] = now()
+    datadir[] = p"/home/pi/mnt/data"
+    isdir(datadir[]) || mkpath(datadir[])
+    nicolas[] = Base.Libc.gethostname() == "nicolas"
+    baudrate[] = 9600
     py"""
     import picamera
     import io
@@ -44,22 +54,10 @@ function __init__()
 
 end
 
-const datadir = p"/home/pi/mnt/data"
-isdir(datadir) || mkpath(datadir)
-
-const nicolas = Base.Libc.gethostname() == "nicolas"
-const setupsurl = nicolas ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNLWhLfp_iuW68j7SM6Px8ysTmbrfmrP_7ipXK9BkfzBgfqn3Mj7ra177mZyHlY5NLA3SDtfYNTROv/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
-const button_class = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-const grid_class = "grid auto-cols-max grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
-const text_class = "border py-2 px-3 text-grey-darkest"
-const bucket = nicolas ? "nicolas-cage-skyroom" : "top-floor-skyroom2"
-const baudrate = 9600
-const framerate = 30
-
 include("cobs.jl")
 include("abstractarduinos.jl")
 include("leds.jl")
-if nicolas
+if nicolas[]
     include("winds.jl")
 end
 
@@ -72,8 +70,10 @@ include("camera.jl")
 
 
 function initialize()
-    allwind = nicolas ? AllWind([FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)], 1)  : nothing
+    fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]
+    allwind = nicolas[] ? AllWind([FanArduino(id, port) for (id, port) in enumerate(fan_ports) if isconnected(port)], 1)  : nothing
     led_arduino = LEDArduino()
+    framerate = 30
     camera = PiCamera(framerate, 67, 67, 4)
 
     data = Observable((frame = snap(camera), trpms = get_rpms(allwind)))
@@ -98,6 +98,9 @@ function plotrpm(trpms)
     rpms = map(trpms) do (_, x)
         collect(Missings.replace(Iterators.flatten(x), NaN))
     end
+    nports = length(last(trpms[]))
+    top_rpm = 12650
+    rpmplt_cont = (colors = repeat(1:nports, inner = [3]), x = vcat(((i - 1)*(nports - 1) + 1 : (i - 1)*(nports - 1) + 3 for i in 1:nports)...), y = top_rpm*ones(3nports), resolution = (540, round(Int, 3nports + 3*540/(3nports+4))))
     rpmplot = Scene(show_axis = false, resolution = rpmplt_cont.resolution)
     barplot!(rpmplot, rpmplt_cont.x, rpmplt_cont.y, color = :white, strokecolor = :black, strokewidth = 1)
     barplot!(rpmplot, rpmplt_cont.x, rpms, color = rpmplt_cont.colors, strokecolor = :transparent, strokewidth = 0)
@@ -134,8 +137,9 @@ function parse2both(setup_file)
 end
 
 function get_setups()
+    setupsurl = nicolas[] ? "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNLWhLfp_iuW68j7SM6Px8ysTmbrfmrP_7ipXK9BkfzBgfqn3Mj7ra177mZyHlY5NLA3SDtfYNTROv/pub?gid=0&single=true&output=csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfv92ymTJjwdU-ft9dgglOOnxPVWwtk6gFIVSocHM3jSfHkjYk-mtEXl3g96-735Atbk1LBRt-8lAY/pub?gid=0&single=true&output=csv"
     setup_file = download(setupsurl)
-    nicolas ? parse2both(setup_file) : parse2one(setup_file)
+    nicolas[] ? parse2both(setup_file) : parse2one(setup_file)
 end
 
 _fun(::Nothing, _) = nothing
@@ -144,6 +148,7 @@ _fun(allwind, setup) = for a in allwind.arduinos
 end
 
 function button(allwind, led_arduino, setup, setuplog)
+    button_class = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
     b = JSServe.Button(string(setup.label), class = button_class)
     on(b) do _
         _fun(allwind, setup)
@@ -170,7 +175,7 @@ stop_record(allwind) = close(allwind.io)
 function record(tf, allwind, camera, timestamp, setuplog)
     if tf
         timestamp[] = string(now())
-        folder = datadir / timestamp[]
+        folder = datadir[] / timestamp[]
         !isdir(folder) && mkdir(folder)
         camera.cam.recording && camera.cam.stop_recording()
         camera.cam.start_recording(string(folder / "video.h264"))
@@ -183,7 +188,7 @@ function record(tf, allwind, camera, timestamp, setuplog)
 end
 
 function save(timestamp, beetleid, comment, setuplog, left2backup, msg)
-    folder = datadir / timestamp[]
+    folder = datadir[] / timestamp[]
     if !isdir(folder)
         msg[] = "You haven't recorded a video yet, there is nothing to save"
         return nothing
@@ -207,12 +212,13 @@ end
 
 function backup(left2backup, msg)
     msg[] = "Started backing up..."
-    for folder in readpath(datadir)
+    for folder in readpath(datadir[])
         tmp = Tar.create(string(folder))
         rm(folder, recursive = true)
         name = basename(folder)
+        bucket = nicolas[] ? "nicolas-cage-skyroom" : "top-floor-skyroom2"
         run(`aws s3 mv $tmp s3://$bucket/$name.tar --quiet`)
-        left2backup[] = length(readdir(datadir))
+        left2backup[] = length(readdir(datadir[]))
     end
     msg[] = "Finished backing up!"
 end
@@ -279,9 +285,11 @@ function handler(allwind, led_arduino, camera, data, session, request)
     recording = JSServe.Checkbox(false)
     on(x -> record(x, allwind, camera, timestamp, setuplog), recording)
 
+    text_class = "border py-2 px-3 text-grey-darkest"
     comment = JSServe.TextField("", class = text_class)
     beetleid = JSServe.TextField("", class = text_class)
 
+    button_class = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
     saving = JSServe.Button("Save", class = button_class)
     on(saving) do _
         if recording[] 
@@ -292,7 +300,7 @@ function handler(allwind, led_arduino, camera, data, session, request)
     end
 
     backingup = JSServe.Button("Backup", class = button_class)
-    left2backup = Observable(length(readdir(datadir)))
+    left2backup = Observable(length(readdir(datadir[])))
     on(_ -> backup(left2backup, msg), backingup)
 
     setups = get_setups()
@@ -300,6 +308,7 @@ function handler(allwind, led_arduino, camera, data, session, request)
 
     # print_sizes()
 
+    grid_class = "grid auto-cols-max grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
     return DOM.div(JSServe.TailwindCSS,
         DOM.div(rpmplot),
         DOM.div(frameplot),

@@ -1,12 +1,3 @@
-const top_rpm = 12650
-const t4 = 15000000
-const shortest_t = t4/1.1top_rpm
-const fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323510141D0-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95635333930351917172-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351010260-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_55838323435351213041-if00", "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_957353530323514121D0-if00"]
-# const fan_ports = ["/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_95735353032351F0F0F0-if00"]
-nports = length(fan_ports)
-const rpmplt_cont = (colors = repeat(1:nports, inner = [3]), x = vcat(((i - 1)*(nports - 1) + 1 : (i - 1)*(nports - 1) + 3 for i in 1:nports)...), y = top_rpm*ones(3nports), resolution = (540, round(Int, 3nports + 3*540/(3nports+4))))
-
-
 struct Wind
     id::Int
     pwm::UInt8
@@ -14,10 +5,8 @@ end
 Wind(id::Int, ::Missing) = Wind(id, 0x00)
 Wind(id::Int, pwm::String) = Wind(id, parse(Int, pwm))
 
-
 tosecond(t::T) where {T <: TimePeriod}= t/convert(T, Second(1))
-t₀ = now()
-sincestart(t) = tosecond(t - t₀)
+sincestart(t) = tosecond(t - t₀[])
 
 function toint(msg)
     y = zero(UInt32)
@@ -28,7 +17,11 @@ function toint(msg)
     return y
 end
 
-getrpm(t) = t < shortest_t ?  missing : t4/t
+function getrpm(t)
+    t4 = 15000000
+    shortest_t = t4/1.1top_rpm
+    t < shortest_t ?  missing : t4/t
+end
 
 function set_pwm!(sp, c, pwm)
     lock(c) do
@@ -53,7 +46,7 @@ end
 
 function isconnected(port)
     try 
-        sp = LibSerialPort.open(port, baudrate)
+        sp = LibSerialPort.open(port, baudrate[])
         close(sp)
         true
     catch ex
@@ -71,7 +64,7 @@ mutable struct FanArduino <: AbstractArduino
     pwm::Observable{UInt8}
     function FanArduino(id::Int, port::String)
         c = ReentrantLock()
-        sp = LibSerialPort.open(port, baudrate)
+        sp = LibSerialPort.open(port, baudrate[])
         pwm = Observable(0x00)
         on(pwm) do x
             set_pwm!(sp, c, x)
