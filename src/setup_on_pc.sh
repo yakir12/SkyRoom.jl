@@ -17,6 +17,8 @@ wget https://julialangnightlies.s3.amazonaws.com/pretesting/linux/armv7l/1.5/jul
 # julia 1.6
 wget https://s3.amazonaws.com/julialangnightlies/assert_pretesting/linux/armv7l/1.6/julia-a8393c4a3b-linuxarmv7l.tar.gz -q -O - | tar -xzf - -C /media/yakir/rootfs/home/pi/
 
+wget https://s3.amazonaws.com/julialangnightlies/assert_pretesting/linux/armv7l/1.6/julia-a8393c4a3b-linuxarmv7l.tar.gz -q -O - | tar -xzf - -C /home/pi/
+
      https://s3.amazonaws.com/julialangnightlies/assert_pretesting/linux/armv7l/1.6/julia-a8393c4a3b-linuxarmv7l.tar.gz
 
 # kill on board LEDs and allow greyworld
