@@ -4,7 +4,6 @@ authors = ["Yakir Gagnon <12.yakir@gmail.com> and contributors"]
 version = "0.1.0"
 
 [deps]
-AbstractPlotting = "537997a7-5e4e-5d89-9595-2241ea00577e"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
@@ -21,7 +20,6 @@ Tar = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
 
 [compat]
-AbstractPlotting = "0.14"
 CSV = "0.8"
 FileIO = "1.4"
 FilePathsBase = "0.9"

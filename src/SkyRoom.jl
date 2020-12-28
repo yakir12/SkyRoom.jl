@@ -2,7 +2,7 @@ module SkyRoom
 
 export main
 
-using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, PyCall, LibSerialPort, Missings#, MemoryHunter
+using Dates, WGLMakie, JSServe, ImageCore, FilePathsBase, CSV, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, PyCall, LibSerialPort, Missings#, MemoryHunter
 using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
@@ -233,35 +233,16 @@ function copy_observable(o, session)
     listener = on(o) do x
         o_copy[] = x
     end
-    on_close(session) do
-        off(o, listener)
+    on(session.on_close) do closed
+        if closed
+            off(o, listener)
+        end
     end
     return o_copy
 end
 
-
-function on_close(f, session)
-    @async begin
-        # wait for session to be open
-        while !isready(session.js_fully_loaded)
-            sleep(0.5)
-        end
-        # wait for session to close
-        while isopen(session)
-            sleep(0.5)
-        end
-        # run on_close callback
-        @info("closing session!")
-        f()
-    end
-end
-
-
-
-
 function handler(allwind, led_arduino, camera, data, session, request)
-    # filter!(((k,s),) -> !isopen(s), app.sessions)
-    # empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
+
     data2 = copy_observable(data, session)
 
     msg = Observable("")
@@ -283,7 +264,7 @@ function handler(allwind, led_arduino, camera, data, session, request)
 
     rpmplot = plotrpm(trpms)
     frameplot = image(frame, scale_plot = false, show_axis = false)
-    disconnect!(AbstractPlotting.camera(frameplot))
+    disconnect!(WGLMakie.camera(frameplot))
 
     setuplog = []
     timestamp = Ref("")
@@ -333,8 +314,6 @@ function main()
     JSServe.Server((session, request) -> handler(allwind, led_arduino, camera, data, session, request), "0.0.0.0", 8082)
 end
 
-
-
 end # module
 
-# PyCall, Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, DataFrames, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, LibSerialPort, Observables
+# PyCall, Dates, WGLMakie, JSServe, ImageCore, FilePathsBase, CSV, DataFrames, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, LibSerialPort, Observables
