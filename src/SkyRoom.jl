@@ -35,6 +35,7 @@ const datadir = Ref{PosixPath}()
 const tempdatadir = Ref{PosixPath}()
 const nicolas = Ref{Bool}()
 const baudrate = Ref{Int}()
+const top_rpm = Ref{Int}()
 
 function __init__()
     t₀[] = now()
@@ -44,6 +45,7 @@ function __init__()
     isdir(tempdatadir[]) || mkpath(tempdatadir[])
     nicolas[] = Base.Libc.gethostname() == "nicolas"
     baudrate[] = 9600
+    top_rpm[] = 12650
     py"""
     import picamera
     import io
@@ -102,8 +104,7 @@ function plotrpm(trpms)
         collect(Missings.replace(Iterators.flatten(x), NaN))
     end
     nports = length(last(trpms[]))
-    top_rpm = 12650
-    rpmplt_cont = (colors = repeat(1:nports, inner = [3]), x = vcat(((i - 1)*(nports - 1) + 1 : (i - 1)*(nports - 1) + 3 for i in 1:nports)...), y = top_rpm*ones(3nports), resolution = (540, round(Int, 3nports + 3*540/(3nports+4))))
+    rpmplt_cont = (colors = repeat(1:nports, inner = [3]), x = vcat(((i - 1)*(nports - 1) + 1 : (i - 1)*(nports - 1) + 3 for i in 1:nports)...), y = top_rpm[]*ones(3nports), resolution = (540, round(Int, 3nports + 3*540/(3nports+4))))
     rpmplot = Scene(show_axis = false, resolution = rpmplt_cont.resolution)
     barplot!(rpmplot, rpmplt_cont.x, rpmplt_cont.y, color = :white, strokecolor = :black, strokewidth = 1)
     barplot!(rpmplot, rpmplt_cont.x, rpms, color = rpmplt_cont.colors, strokecolor = :transparent, strokewidth = 0)

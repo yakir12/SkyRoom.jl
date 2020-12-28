@@ -19,7 +19,7 @@ end
 
 function getrpm(t)
     t4 = 15000000
-    shortest_t = t4/1.1top_rpm
+    shortest_t = t4/1.1top_rpm[]
     t < shortest_t ?  missing : t4/t
 end
 
