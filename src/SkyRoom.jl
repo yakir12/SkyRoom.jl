@@ -260,7 +260,7 @@ end
 
 function handler(allwind, led_arduino, camera, data, session, request)
     # filter!(((k,s),) -> !isopen(s), app.sessions)
-    empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
+    # empty!(WGLMakie.SAVE_POINTER_IDENTITY_FOR_TEXTURES)
     data2 = copy_observable(data, session)
 
     msg = Observable("")
