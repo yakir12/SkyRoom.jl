@@ -228,22 +228,12 @@ function backup(left2backup, msg)
     msg[] = "Finished backing up!"
 end
 
-function copy_observable(o, session)
-    o_copy = Observable(o[])
-    listener = on(o) do x
-        o_copy[] = x
-    end
-    on(session.on_close) do closed
-        if closed
-            off(o, listener)
-        end
-    end
-    return o_copy
-end
-
 function handler(allwind, led_arduino, camera, data, session, request)
 
-    data2 = copy_observable(data, session)
+    data2 = Observable(data[])
+    on(session, data) do x
+        data2[] = x
+    end
 
     msg = Observable("")
     on(msg) do x
@@ -296,17 +286,17 @@ function handler(allwind, led_arduino, camera, data, session, request)
 
     grid_class = "grid auto-cols-max grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
     return DOM.div(JSServe.TailwindCSS,
-        DOM.div(rpmplot),
-        DOM.div(frameplot),
-        DOM.div(buttons..., class = grid_class),
-        DOM.div("Record ", recording),
-        DOM.div("Beetle ID ", beetleid),
-        DOM.div("Comment ", comment),
-        DOM.div(saving),
-        DOM.div(backingup, left2backup, " runs left to backup"), 
-        DOM.div(msg),
-        class = "grid grid-cols-1 gap-4"
-    )
+                   DOM.div(rpmplot),
+                   DOM.div(frameplot),
+                   DOM.div(buttons..., class = grid_class),
+                   DOM.div("Record ", recording),
+                   DOM.div("Beetle ID ", beetleid),
+    DOM.div("Comment ", comment),
+    DOM.div(saving),
+    DOM.div(backingup, left2backup, " runs left to backup"), 
+    DOM.div(msg),
+    class = "grid grid-cols-1 gap-4"
+   )
 end
 
 function main()
