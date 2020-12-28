@@ -2,7 +2,7 @@ module SkyRoom
 
 export main
 
-using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, HTTP, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, PyCall, LibSerialPort, Missings#, MemoryHunter
+using Dates, WGLMakie, AbstractPlotting, JSServe, ImageCore, FilePathsBase, CSV, Pkg.TOML, Tar, FileIO, ImageMagick, Observables, PyCall, LibSerialPort, Missings#, MemoryHunter
 using FilePathsBase: /
 using JSServe.DOM
 using JSServe: @js_str
