@@ -329,7 +329,7 @@ end
 
 function main()
     allwind, led_arduino, camera, data, task = initialize()
-    JSServe.Application((session, request) -> handler(allwind, led_arduino, camera, data, session, request), "0.0.0.0", 8082)
+    JSServe.Server((session, request) -> handler(allwind, led_arduino, camera, data, session, request), "0.0.0.0", 8082)
 end
 
 
