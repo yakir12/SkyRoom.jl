@@ -32,6 +32,7 @@ using JSServe: @js_str
 
 const t₀ = Ref{DateTime}()
 const datadir = Ref{PosixPath}()
+const tempdatadir = Ref{PosixPath}()
 const nicolas = Ref{Bool}()
 const baudrate = Ref{Int}()
 
@@ -39,6 +40,8 @@ function __init__()
     t₀[] = now()
     datadir[] = p"/home/pi/mnt/data"
     isdir(datadir[]) || mkpath(datadir[])
+    tempdatadir[] = p"/home/pi/mnt/tmp"
+    isdir(tempdatadir[]) || mkpath(tempdatadir[])
     nicolas[] = Base.Libc.gethostname() == "nicolas"
     baudrate[] = 9600
     py"""
@@ -213,9 +216,10 @@ end
 function backup(left2backup, msg)
     msg[] = "Started backing up..."
     for folder in readpath(datadir[])
-        tmp = Tar.create(string(folder))
-        rm(folder, recursive = true)
         name = basename(folder)
+        tmp = tempdatadir[] / name * ".tar"
+        Tar.create(string(folder), string(tmp))
+        rm(folder, recursive = true)
         bucket = nicolas[] ? "nicolas-cage-skyroom" : "top-floor-skyroom2"
         run(`aws s3 mv $tmp s3://$bucket/$name.tar --quiet`)
         left2backup[] = length(readdir(datadir[]))
