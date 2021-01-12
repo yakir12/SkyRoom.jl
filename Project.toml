@@ -31,7 +31,7 @@ Missings = "0.4"
 Observables = "0.3"
 PyCall = "1.92"
 Tar = "1.8"
-WGLMakie = "0.2"
+WGLMakie = "0.2, 0.3"
 julia = "1"
 
 [extras]
