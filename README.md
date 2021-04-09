@@ -16,6 +16,7 @@
 - [Link to results](https://nicolas-cage-skyroom.s3.eu-north-1.amazonaws.com/list.html)
 
 ## Instructions for the toml setup file
+Properties in parenthesis have sensible defaults so you don't need to include them.
 ### Star
 - `intensity` (0-255) for specifying the green light, OR `rgb` (e.g. `[0, 0, 255]` for max blue light) for specifying a specific color
 - `elevation` (1-71)
